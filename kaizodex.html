@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KaizoDex — Emerald Kaizo Hardcore Nuzlocke Companion</title>
+<style>
+  :root{
+    --bg:#0b1020; --panel:#141b31; --panel2:#1b2440; --line:#2a3350;
+    --txt:#e8edf7; --muted:#93a0bd; --accent:#3b82f6; --accent2:#22d3ee;
+    --danger:#f87171; --good:#34d399; --warn:#fbbf24;
+    --chip:#233052;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:linear-gradient(160deg,#0b1020,#0e1430 60%,#0b1020);color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    min-height:100vh;line-height:1.5}
+  a{color:var(--accent2);text-decoration:none}
+  a:hover{text-decoration:underline}
+  header{padding:22px 18px 10px;text-align:center;border-bottom:1px solid var(--line);
+    background:radial-gradient(120% 140% at 50% -20%,rgba(59,130,246,.18),transparent 60%)}
+  header h1{margin:0;font-size:26px;letter-spacing:.5px}
+  header h1 .k{color:var(--accent2)}
+  header p{margin:6px 0 0;color:var(--muted);font-size:13px}
+  nav{position:sticky;top:0;z-index:20;display:flex;flex-wrap:wrap;gap:6px;justify-content:center;
+    padding:10px;background:rgba(11,16,32,.9);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  nav button{background:var(--panel);color:var(--muted);border:1px solid var(--line);
+    padding:7px 13px;border-radius:999px;font-size:13px;cursor:pointer;font-weight:600;transition:.15s}
+  nav button:hover{color:var(--txt);border-color:var(--accent)}
+  nav button.active{background:linear-gradient(90deg,var(--accent),var(--accent2));color:#04122b;border-color:transparent}
+  main{max-width:1080px;margin:0 auto;padding:18px 14px 60px}
+  section{display:none;animation:fade .25s ease}
+  section.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  h2.title{font-size:20px;margin:6px 0 4px}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin:0 0 14px}
+  .card h3{margin:0 0 8px;font-size:16px}
+  .grid{display:grid;gap:12px}
+  @media(min-width:640px){.grid.two{grid-template-columns:1fr 1fr}}
+  .pill{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;margin-right:6px}
+  .cap{background:rgba(59,130,246,.18);color:#93c5fd}
+  .typ{background:var(--chip);color:var(--txt)}
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .toolbar input,.toolbar select{background:var(--panel);border:1px solid var(--line);color:var(--txt);
+    padding:8px 12px;border-radius:10px;font-size:13px}
+  .toolbar input{flex:1;min-width:160px}
+  .filterbtn{background:var(--panel);border:1px solid var(--line);color:var(--muted);padding:7px 12px;
+    border-radius:999px;font-size:12px;cursor:pointer;font-weight:600}
+  .filterbtn.active{background:var(--accent);color:#04122b;border-color:transparent}
+  .boss{background:var(--panel);border:1px solid var(--line);border-radius:14px;margin:0 0 14px;overflow:hidden}
+  .boss-head{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;
+    background:linear-gradient(90deg,rgba(59,130,246,.10),transparent)}
+  .boss-head:hover{background:linear-gradient(90deg,rgba(59,130,246,.18),transparent)}
+  .boss-head .nm{font-size:17px;font-weight:700}
+  .boss-head .meta{color:var(--muted);font-size:12px;margin-top:2px}
+  .boss-head .cat{margin-left:auto;font-size:11px;color:var(--muted);border:1px solid var(--line);
+    padding:3px 8px;border-radius:999px;white-space:nowrap}
+  .caret{transition:.2s;color:var(--accent2)}
+  .boss.open .caret{transform:rotate(90deg)}
+  .boss-body{display:none;padding:4px 16px 16px;border-top:1px solid var(--line)}
+  .boss.open .boss-body{display:block}
+  .team{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+  .mon{width:78px;text-align:center;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:6px 2px}
+  .mon img{width:56px;height:56px;image-rendering:auto;object-fit:contain}
+  .mon .mn{font-size:10.5px;color:var(--txt);line-height:1.2;margin-top:2px}
+  .mon .lv{font-size:10px;color:var(--muted)}
+  .row{margin:8px 0;font-size:13.5px}
+  .row b.thr{color:var(--danger)}
+  .row b.pl{color:var(--good)}
+  ul.clean{margin:6px 0 0;padding-left:20px;font-size:13.5px}
+  ul.clean li{margin:6px 0}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line)}
+  th{color:var(--accent2);font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+  tr:hover td{background:rgba(59,130,246,.06)}
+  .jump{color:var(--warn);font-weight:700}
+  .res{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--line)}
+  .res:last-child{border:0}
+  .res .ic{font-size:22px;width:30px;text-align:center}
+  .res .t{font-weight:700;font-size:14px}
+  .res .d{color:var(--muted);font-size:12.5px;margin-top:2px}
+  .callout{border-left:3px solid var(--accent2);background:var(--panel2);padding:10px 14px;border-radius:0 10px 10px 0;font-size:13.5px;margin:12px 0}
+  footer{text-align:center;color:var(--muted);font-size:11.5px;padding:24px 12px 40px}
+  .ai-item{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+  .ai-item:last-child{border:0}
+  .ai-item .ic{font-size:20px}
+  .ai-item .h{font-weight:700;font-size:14px}
+  .ai-item .b{color:var(--muted);font-size:13px;margin-top:2px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;gap:14px;justify-content:space-around;text-align:center}
+  .stat .n{font-size:22px;font-weight:800}
+  .stat .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+  .trk{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .trk .loc{font-weight:700;font-size:13.5px;min-width:150px;flex:1}
+  .trk .loc small{display:block;color:var(--muted);font-weight:500;font-size:11px}
+  .trk img{width:40px;height:40px;object-fit:contain}
+  .trk input.sp,.trk input.nk{background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:6px 9px;border-radius:8px;font-size:12.5px;width:120px}
+  .trk .st{display:flex;gap:4px}
+  .trk .st button{border:1px solid var(--line);background:var(--panel2);color:var(--muted);font-size:11px;font-weight:700;padding:5px 9px;border-radius:8px;cursor:pointer}
+  .trk .st button.on[data-s="team"]{background:var(--good);color:#04240f;border-color:transparent}
+  .trk .st button.on[data-s="box"]{background:var(--accent);color:#04122b;border-color:transparent}
+  .trk .st button.on[data-s="dead"]{background:var(--danger);color:#2a0606;border-color:transparent}
+  .trk .st button.on[data-s="missed"]{background:#6b7280;color:#0b0f18;border-color:transparent}
+  .trk.dead{opacity:.6}
+  .trk.dead img{filter:grayscale(1)}
+  /* encounters */
+  .enc{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:10px;overflow:hidden}
+  .enc-h{padding:11px 14px;cursor:pointer;font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px;background:linear-gradient(90deg,rgba(34,211,238,.08),transparent)}
+  .enc-h:hover{background:linear-gradient(90deg,rgba(34,211,238,.16),transparent)}
+  .enc-h .caret{color:var(--accent2);transition:.2s}
+  .enc.open .enc-h .caret{transform:rotate(90deg)}
+  .enc-b{display:none;padding:6px 14px 14px;border-top:1px solid var(--line)}
+  .enc.open .enc-b{display:block}
+  .meth{margin:10px 0 4px;font-size:11px;font-weight:800;letter-spacing:.5px;color:var(--accent2);text-transform:uppercase}
+  .mons{display:flex;flex-wrap:wrap;gap:6px}
+  .em{width:70px;text-align:center;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:5px 2px}
+  .em img{width:46px;height:46px;object-fit:contain}
+  .em .en{font-size:10px;line-height:1.15}
+  .em .er{font-size:9.5px;color:var(--muted)}
+  .em.rare{border-color:#a855f7}
+  .em.rare .er{color:#c084fc}
+  mark{background:var(--accent2);color:#04122b;border-radius:3px;padding:0 2px}
+  /* calc */
+  .cl{display:block;font-size:11px;color:var(--muted);font-weight:600;margin:8px 0 0}
+  .cl input,.cl select{display:block;width:100%;margin-top:3px;background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:7px 9px;border-radius:8px;font-size:13px}
+  .cl.chk{display:flex;align-items:center;gap:7px;margin-top:14px;color:var(--txt);font-size:13px;font-weight:600}
+  .cl.chk input{width:auto;margin:0}
+  .crow{display:flex;gap:10px}
+  .crow.wrap{flex-wrap:wrap;align-items:flex-end}
+  .crow>.cl{flex:1}
+  .calcout{text-align:center}
+  .calcbig{font-size:30px;font-weight:800;margin:2px 0}
+  .calcpct{font-size:15px;color:var(--muted)}
+  .kobar{height:12px;border-radius:6px;background:var(--panel2);overflow:hidden;margin:12px auto 6px;max-width:420px;border:1px solid var(--line)}
+  .kofill{height:100%;transition:.2s}
+  .koverdict{font-weight:700;font-size:15px;margin-top:6px}
+  .eff{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .encbtn{background:var(--panel2);border:1px solid var(--line);color:var(--accent2);font-size:11px;font-weight:700;padding:5px 9px;border-radius:8px;cursor:pointer}
+  .encpanel{display:none;flex-basis:100%;width:100%;flex-wrap:wrap;gap:5px;margin-top:8px}
+  .encpanel.open{display:flex}
+  .echip{display:inline-flex;align-items:center;gap:3px;background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:2px 8px 2px 3px;font-size:11px;cursor:pointer}
+  .echip:hover{border-color:var(--accent2);color:var(--accent2)}
+  .echip img{width:22px;height:22px;object-fit:contain}
+</style>
+</head>
+<body>
+<header>
+  <h1><span class="k">Kaizo</span>Dex</h1>
+  <p>Emerald Kaizo · Hardcore Nuzlocke Companion — bosses, enemy AI, routing, tools</p>
+</header>
+
+<nav id="nav"></nav>
+
+<main>
+  <!-- OVERVIEW -->
+  <section id="overview" class="active">
+    <h2 class="title">Start Here</h2>
+    <p class="sub">Everything you need to beat Emerald Kaizo as a hardcore nuzlocke. Read the rules, grab the tools, then live in the Bosses + AI tabs.</p>
+
+    <div class="callout"><b>Reality check:</b> a blind hardcore run is nearly impossible. Winning = knowing enemy rosters ahead of time, running a damage calculator before big fights, and building specific counters. This app is a planning tool, not a walkthrough.</div>
+
+    <div class="grid two">
+      <div class="card">
+        <h3>🎯 Core Nuzlocke Rules</h3>
+        <ul class="clean">
+          <li><b>Permadeath</b> — fainted = dead, box or release it.</li>
+          <li><b>First encounter only</b> — one catch per route; miss it and you get nothing there.</li>
+          <li><b>Nickname everything</b> — bonds you'll need.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>🔒 Hardcore Additions</h3>
+        <ul class="clean">
+          <li><b>Level caps</b> — never exceed the next boss's top level (enforced anyway).</li>
+          <li><b>SET battle mode</b> — no switch previews.</li>
+          <li><b>No healing items in battle</b> — held items (Sitrus/Lum) ARE allowed & essential.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>⚔️ Common Clauses</h3>
+      <ul class="clean">
+        <li><b>Dupes clause</b> — re-roll a first encounter you already own.</li>
+        <li><b>Shiny clause</b> — shinies can always be caught.</li>
+        <li><b>No EV grinding</b> — this hack gives no EVs. Buy cheap Rare Candies before the E4 to hit caps.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>📊 The Numbers</h3>
+      <p class="sub" style="margin:0">345 rebalanced Pokémon · 67 locations · 37 boss battles (9 gyms, 5 League, 10 rival, 11 Magma/Aqua, 2 secret). Held items on nearly every trainer. AI that predicts switches and hits coverage. Difficulty <b>ramps up</b> — the endgame is the hardest part.</p>
+    </div>
+  </section>
+
+  <!-- TRACKER -->
+  <section id="tracker">
+    <h2 class="title">My Nuzlocke Run</h2>
+    <p class="sub">Log your encounter on each route as you go. Saved automatically in your browser — close the tab and it's still here. Inspired by the Nuzlocke Tracker.</p>
+    <div id="trackStats" class="grid two" style="margin-bottom:14px"></div>
+    <div class="toolbar">
+      <input id="trackSearch" placeholder="Search location or species…" oninput="renderTracker()">
+      <select id="trackFilter" onchange="renderTracker()">
+        <option value="all">All statuses</option>
+        <option value="team">On Team</option>
+        <option value="box">Boxed</option>
+        <option value="dead">Dead 💀</option>
+        <option value="missed">Missed</option>
+        <option value="none">Not logged</option>
+      </select>
+      <button class="filterbtn" onclick="exportRun()">⬇ Export</button>
+      <button class="filterbtn" onclick="resetRun()">↺ Reset</button>
+    </div>
+    <div id="trackList"></div>
+  </section>
+
+  <!-- BOSSES -->
+  <section id="bosses">
+    <h2 class="title">Boss Breakdowns</h2>
+    <p class="sub">Tap a boss to expand teams, threats and a game plan. Sprites are illustrative — always confirm exact movesets/items in the calc, they shift between patch versions.</p>
+    <div class="toolbar">
+      <input id="bossSearch" placeholder="Search boss or Pokémon…" oninput="renderBosses()">
+      <div id="bossFilters"></div>
+    </div>
+    <div id="bossList"></div>
+  </section>
+
+  <!-- AI -->
+  <section id="ai">
+    <h2 class="title">How the Enemy AI Thinks</h2>
+    <p class="sub">The #1 reason blind runs die. Internalize these to predict enemy moves and bait mistakes.</p>
+    <div class="card" id="aiList"></div>
+    <div class="callout"><b>Golden rule:</b> load the enemy team in the damage calc and script the fight turn-by-turn before you play it. Improvising = dead mons.</div>
+  </section>
+
+  <!-- ROUTING -->
+  <section id="routing">
+    <h2 class="title">Team Building & Encounter Routing</h2>
+    <p class="sub">Route your catches around the early wall, then build coverage.</p>
+
+    <div class="card">
+      <h3>🥚 Starter Choice</h3>
+      <p style="font-size:13.5px;margin:0"><b>Mudkip → Swampert</b> is the safest anchor — Water/Ground bulk carries Roxanne, Wattson, Flannery and the mid-game. <b>Treecko</b> (Sceptile) is fast but frail; <b>Torchic</b> (Blaziken) nukes but is speed-checked and weak to common Rock/Water/Flying. Your rival always picks the type that beats yours. Check this version's starter abilities in EKHeX first.</p>
+    </div>
+
+    <div class="card">
+      <h3>🧭 Routing Priorities</h3>
+      <ul class="clean">
+        <li><b>Cover the early wall first</b> (Roxanne → Brawly → Wattson → Flannery) before anything sentimental.</li>
+        <li><b>Build coverage, not a mono-team</b> — reliable answers to Water, Ground, Flying, Psychic, Ice, Dragon, Steel by mid-game.</li>
+        <li><b>Value bulk + utility</b> — recovery, status (T-Wave/Toxic/Spore), setup (DD/Calm Mind) and priority age well.</li>
+        <li><b>Keep a sacrifice slot</b> — a throwaway KO buys a safe switch into a counter. Set party order before every boss.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>🎯 Early-Game Answers</h3>
+      <table>
+        <tr><th>Gym</th><th>Bring</th></tr>
+        <tr><td>Roxanne (Rock)</td><td>Water/Grass hitter; she's a full 6 (Shuckle/Lunatone/Relicanth), not vanilla 2.</td></tr>
+        <tr><td>Brawly (Fighting)</td><td>Flying or Psychic; dodge coverage that hits Flyers (Rock/Water/Poison).</td></tr>
+        <tr><td>Wattson (Electric)</td><td>Ground is mandatory + a partner for Lanturn (Water/Electric).</td></tr>
+        <tr><td>Flannery (Fire)</td><td>Bulky Water w/ recovery + a Rock/Ground; beware Solar Beam in sun.</td></tr>
+      </table>
+    </div>
+    <div class="callout">Use the interactive encounter map on the <a href="https://nuzlocketracker.org/guides/emerald-kaizo#encounters" target="_blank">Nuzlocke Tracker</a> to see which of the 345 species appear on each of the 67 routes, then pre-plan every catch.</div>
+  </section>
+
+  <!-- CAPS -->
+  <section id="caps">
+    <h2 class="title">Level Caps</h2>
+    <p class="sub">Keep your whole team at or below the cap for the fight you're prepping. Enforced by the game.</p>
+    <div class="card" style="padding:6px 12px">
+      <table id="capTable"></table>
+    </div>
+    <div class="callout"><b>Watch the jumps:</b> Wattson→Flannery (<span class="jump">29→42</span>) and Winona→Tate&Liza (<span class="jump">55→70</span>) are massive. Plan evolutions and grind spots ahead of them — this is where runs stall.</div>
+  </section>
+
+  <!-- ENCOUNTERS -->
+  <section id="encounters">
+    <h2 class="title">Encounter Map</h2>
+    <p class="sub">Accurate wild encounter tables for every location (v2.0 data). Plan your first-encounter catch on each route. Search a species to see everywhere it appears.</p>
+    <div class="toolbar">
+      <input id="encSearch" placeholder="Search location or Pokémon (e.g. Trapinch)…" oninput="renderEnc()">
+      <select id="encMethod" onchange="renderEnc()">
+        <option value="all">All methods</option>
+        <option value="Grass">Grass</option>
+        <option value="Cave">Cave / Inside</option>
+        <option value="Surf">Surf</option>
+        <option value="Rod">Fishing</option>
+      </select>
+    </div>
+    <div id="encList"></div>
+  </section>
+
+  <!-- CALC -->
+  <section id="calc">
+    <h2 class="title">Damage Calculator</h2>
+    <p class="sub">Gen 3 mechanics. Because Kaizo rebalances stats, enter the <b>actual battle stats</b> (autofill gives vanilla base as a starting point — edit them). For patch-exact rolls also cross-check the <a href="https://hzla.github.io/Dynamic-Calc/" target="_blank">EK Dynamic Calc</a>.</p>
+    <div class="grid two">
+      <div class="card">
+        <h3 style="color:var(--danger)">⚔️ Attacker</h3>
+        <label class="cl">Species (autofill)
+          <select id="atkMon" onchange="autofill('atk')"></select></label>
+        <div class="crow">
+          <label class="cl">Level<input id="atkLvl" type="number" value="50" oninput="calc()"></label>
+          <label class="cl">Move category
+            <select id="atkCat" onchange="calc()"><option value="phys">Physical</option><option value="spec">Special</option></select></label>
+        </div>
+        <label class="cl">Attacking stat (Atk or SpA)<input id="atkStat" type="number" value="100" oninput="calc()"></label>
+        <div class="crow">
+          <label class="cl">Move type
+            <select id="moveType" onchange="calc()"></select></label>
+          <label class="cl">Base power<input id="movePow" type="number" value="80" oninput="calc()"></label>
+        </div>
+        <div class="crow">
+          <label class="cl">Atk stage
+            <select id="atkStage" onchange="calc()"></select></label>
+          <label class="cl chk"><input id="stab" type="checkbox" onchange="calc()"> STAB (×1.5)</label>
+        </div>
+        <label class="cl">Item / boost
+          <select id="atkItem" onchange="calc()">
+            <option value="1">None</option>
+            <option value="1.5">Choice Band / Choice Specs (×1.5)</option>
+            <option value="1.1">Type-boost item (×1.1)</option>
+          </select></label>
+      </div>
+      <div class="card">
+        <h3 style="color:var(--good)">🛡️ Defender</h3>
+        <label class="cl">Species (autofill)
+          <select id="defMon" onchange="autofill('def')"></select></label>
+        <label class="cl">HP stat<input id="defHP" type="number" value="150" oninput="calc()"></label>
+        <label class="cl">Defending stat (Def or SpD)<input id="defStat" type="number" value="100" oninput="calc()"></label>
+        <div class="crow">
+          <label class="cl">Type 1<select id="defT1" onchange="calc()"></select></label>
+          <label class="cl">Type 2<select id="defT2" onchange="calc()"></select></label>
+        </div>
+        <div class="crow">
+          <label class="cl">Def stage<select id="defStage" onchange="calc()"></select></label>
+          <label class="cl chk"><input id="screen" type="checkbox" onchange="calc()"> Screen (×0.5)</label>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Modifiers</h3>
+      <div class="crow wrap">
+        <label class="cl chk"><input id="crit" type="checkbox" onchange="calc()"> Critical hit</label>
+        <label class="cl chk"><input id="burn" type="checkbox" onchange="calc()"> Attacker burned (phys ×0.5)</label>
+        <label class="cl">Weather
+          <select id="weather" onchange="calc()">
+            <option value="none">None</option>
+            <option value="sunFire">Sun + Fire move (×1.5)</option>
+            <option value="sunWater">Sun + Water move (×0.5)</option>
+            <option value="rainWater">Rain + Water move (×1.5)</option>
+            <option value="rainFire">Rain + Fire move (×0.5)</option>
+          </select></label>
+      </div>
+    </div>
+    <div id="calcOut" class="card calcout"></div>
+  </section>
+
+  <!-- RESOURCES -->
+  <section id="resources">
+    <h2 class="title">Resources & Tools</h2>
+    <p class="sub">Set these up before you touch the game. The exact toolkit serious Kaizo nuzlockers use.</p>
+    <div class="card" id="resList"></div>
+    <div class="callout"><b>Emulator setup:</b> mGBA or BizHawk on PC (Lua support, save states for practice, speed-up). Turn on <b>Battle Style: SET</b> in options.</div>
+  </section>
+</main>
+
+<footer>
+  KaizoDex — a fan-made planning companion for Pokémon Emerald Kaizo. Not affiliated with Nintendo/Game Freak.<br>
+  Data cross-checked against Nuzlocke Tracker &amp; community docs · Sprites via Pokémon Showdown. Verify movesets in the calc — they change between patches.
+</footer>
+
+<script>
+/* ---------------- NAV ---------------- */
+const tabs=[
+  ["overview","Start Here"],["tracker","My Run"],["bosses","Bosses"],["ai","Enemy AI"],
+  ["encounters","Encounters"],["calc","Dmg Calc"],["routing","Routing"],["caps","Level Caps"],["resources","Resources"]
+];
+const nav=document.getElementById('nav');
+tabs.forEach(([id,label],i)=>{
+  const b=document.createElement('button');
+  b.textContent=label; b.className=i===0?'active':'';
+  b.onclick=()=>{
+    document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('section').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    document.getElementById(id).classList.add('active');
+    window.scrollTo({top:0,behavior:'smooth'});
+    location.hash=id;
+  };
+  nav.appendChild(b);
+});
+
+/* ---------------- SPRITES ---------------- */
+function sprite(name){
+  const s=name.toLowerCase().replace('♀','f').replace('♂','m').replace(/[^a-z0-9]/g,'');
+  return `https://play.pokemonshowdown.com/sprites/gen5/${s}.png`;
+}
+function mon(name,lv){
+  return `<div class="mon"><img loading="lazy" src="${sprite(name)}" onerror="this.style.opacity=.25"><div class="mn">${name}</div>${lv?`<div class="lv">Lv ${lv}</div>`:''}</div>`;
+}
+
+/* ---------------- BOSS DATA ---------------- */
+const BOSSES=[
+  {cat:"Gym",name:"Roxanne",loc:"Rustboro Gym",type:"Rock",cap:15,
+   team:[["Nosepass",15],["Lileep",14],["Anorith",14],["Relicanth",14],["Shuckle",14],["Lunatone",15]],
+   threat:"Sturdy/bulky Rocks that stall and chip; Lunatone brings Psychic + status; Shuckle sets rocks and toxic-stalls.",
+   plan:"Lead a strong Water or Grass move (Marshtomp/Lombre/grass hitter). Avoid slow physical trades into Sturdy — hit special or super-effective. Don't let Shuckle stall you into chip damage."},
+  {cat:"Gym",name:"Brawly",loc:"Dewford Gym",type:"Fighting",cap:19,
+   team:[["Hitmontop",""],["Hitmonlee",""],["Hitmonchan",""],["Meditite",""],["Poliwrath",""],["Hariyama",""]],
+   threat:"The Hitmon trio + Hariyama hit like trucks; Meditite has Pure Power; Poliwrath adds Water vs your Flyers.",
+   plan:"Flying or Psychic sweeper (Swellow, Crobat, an early Psychic). Watch coverage that hits Flyers (Rock/Poison/Water). Meditite/Poliwrath can surprise-KO — calc every switch."},
+  {cat:"Gym",name:"Wattson",loc:"Mauville Gym",type:"Electric",cap:29,
+   team:[["Jolteon",""],["Lanturn",""],["Ampharos",""],["Raichu",""],["Electabuzz",""],["Manectric",""]],
+   threat:"Fast special Electrics; Lanturn is Water/Electric so Ground doesn't wall it (hits your Ground with Water). Coverage like HP/Signal Beam.",
+   plan:"A bulky Ground is mandatory, but bring a partner for Lanturn (Grass/Electric answer). Paralysis helps; pick off Jolteon/Manectric before they speed-tie you."},
+  {cat:"Gym",name:"Flannery",loc:"Lavaridge Gym",type:"Fire",cap:42,
+   team:[["Ninetales",""],["Charizard",""],["Blaziken",""],["Arcanine",""],["Typhlosion",""],["Castform",""]],
+   threat:"Sun boosts their Fire; Charizard adds Flying, Blaziken adds Fighting, Castform-Sunny is a special nuke. Expect Solar Beam vs your Water walls.",
+   plan:"Bulky Water with recovery is the anchor; a Rock/Ground helps vs Charizard/Blaziken. Beware Solar Beam in sun on Water/Rock. Trade carefully — coverage is wide."},
+  {cat:"Gym",name:"Norman",loc:"Petalburg Gym",type:"Normal",cap:48,
+   team:[["Slaking",""],["Espeon",""],["Kangaskhan",""],["Swellow",""],["Tauros",""],["Snorlax",""]],
+   threat:"Slaking is a monster (only Truant saves you) and nukes on its active turn. Espeon breaks Fighting answers; Swellow/Tauros are fast physical.",
+   plan:"Fighting types crush the Normals but must dodge Espeon (Psychic). Abuse Slaking's Truant turn to set up or swap free. Burn neuters the physical sweepers; a Ghost/rock wall helps."},
+  {cat:"Gym",name:"Winona",loc:"Fortree Gym",type:"Flying",cap:55,
+   team:[["Aerodactyl",""],["Zapdos",""],["Crobat",""],["Articuno",""],["Flygon",""],["Moltres",""]],
+   threat:"Legendary-tier Flyers: Zapdos/Moltres/Articuno are bulky special nukes; Aerodactyl is a fast Rock/Flying lead; Flygon dodges Electric.",
+   plan:"Electric + Rock/Ice answers. A bulky Electric handles the birds but watch Flygon/Aerodactyl. Rock smashes Moltres/Articuno/Zapdos. Paralysis to control speed."},
+  {cat:"Gym",name:"Tate & Liza",loc:"Mossdeep Gym (Double)",type:"Psychic",cap:70,
+   team:[["Latias",""],["Latios",""],["Gardevoir",""],["Medicham",""],["Starmie",""],["Jirachi",""]],
+   threat:"DOUBLE battle — Latios/Latias hit both mons, Jirachi sets up/paralyzes, Medicham nukes (Pure Power), Starmie fast coverage. Huge spike (55→70).",
+   plan:"Dark/Ghost/Steel coverage + spread control. Pursuit/Dark and Bug hurt the twins; a Steel walls a lot. Kill the twins first; remove Jirachi's setup fast. Protect + spread. Practice this fight."},
+  {cat:"Gym",name:"Wallace",loc:"Sootopolis Gym",type:"Water",cap:77,
+   team:[["Kingdra",""],["Castform",""],["Ludicolo",""],["Swampert",""],["Lapras",""],["Milotic",""]],
+   threat:"Kingdra (rain sweeper), Ludicolo (Swift Swim, Grass/Water), Milotic bulk+recover, Swampert coverage, Lapras Ice. Rain boosts their Water.",
+   plan:"Electric + Grass coverage, but Ludicolo/Swampert punish those. Grass answers Swampert/Ludicolo's water half; Electric handles Kingdra/Lapras/Milotic. Break rain or race it — Kingdra in rain is the kill threat, calc it."},
+  {cat:"Gym",name:"Juan",loc:"Sootopolis Gym",type:"Water",cap:77,
+   team:[["Kingdra",""],["Lapras",""],["Castform",""],["Lanturn",""],["Ludicolo",""],["Vaporeon",""]],
+   threat:"Second Water leader; Kingdra rain sweep again, Lanturn punishes Grounds, Vaporeon bulk, Lapras Ice on your Grass.",
+   plan:"Same as Wallace: Electric core + a Grass check, but keep an Electric answer for Lanturn's Water and a non-Grass hitter for Lapras's Ice. Handle rain and Kingdra first."},
+
+  {cat:"Elite Four",name:"Sidney",loc:"Pokémon League",type:"Dark",cap:78,
+   team:[["Absol",""],["Shiftry",""],["Cacturne",""],["Crawdaunt",""],["Mightyena",""],["Sharpedo",""]],
+   threat:"Physical Dark hitters + Sucker Punch. Absol/Sharpedo are fast nukes; Crawdaunt/Shiftry add coverage.",
+   plan:"Fighting & Fairy/Bug hitters. Don't telegraph status/setup turns into Sucker Punch. Priority + bulk wins. Confirm exact team in the calc — E4 shifts by patch."},
+  {cat:"Elite Four",name:"Phoebe",loc:"Pokémon League",type:"Ghost",cap:79,
+   team:[["Dusclops",""],["Banette",""],["Sableye",""],["Gengar",""],["Mismagius",""],["Froslass",""]],
+   threat:"Will-O-Wisp burns, Confuse/status stall, Pursuit-trapping punishes switches. Gengar/Froslass are fast special.",
+   plan:"Dark & Ghost coverage; a Normal type (Ghost-immune) is handy if it carries coverage. Carry Lum/status absorbers. Trap them before they trap you."},
+  {cat:"Elite Four",name:"Glacia",loc:"Pokémon League",type:"Ice",cap:80,
+   team:[["Walrein",""],["Glalie",""],["Froslass",""],["Jynx",""],["Lapras",""],["Weavile",""]],
+   threat:"Hail chip + Water/Ice coverage; Weavile fast physical, Jynx/Froslass special. Ice hits your Dragons/Flyers hard.",
+   plan:"Steel/Fire/Fighting/Rock hitters that resist Ice. Bulky Waters that resist Ice do work. Watch Weavile's priority + Low Kick."},
+  {cat:"Elite Four",name:"Drake",loc:"Pokémon League",type:"Dragon",cap:82,
+   team:[["Salamence",""],["Kingdra",""],["Flygon",""],["Altaria",""],["Latias",""],["Dragonite",""]],
+   threat:"Competitive-tier Dragon sweepers — Salamence/Dragonite/Latias hit brutally; Kingdra rain; Flygon EQ.",
+   plan:"Ice + Dragon answers, plus Fairy/Steel bulk. Ice Beam OHKO checks are essential; a Steel walls Dragon STAB. Remove speed threats first — calc every roll."},
+  {cat:"Champion",name:"Steven",loc:"Pokémon League — Champion",type:"Steel / Rock",cap:85,
+   team:[["Metagross",""],["Aggron",""],["Cradily",""],["Armaldo",""],["Skarmory",""],["Metang",""]],
+   threat:"Steel/Rock wall: Metagross nukes, Aggron/Skarmory bulk, Cradily/Armaldo stall + coverage. The final wall.",
+   plan:"Fighting + Ground + Fire + strong special coverage. Earthquake and special hits break the Steels. No mid-run healing — script it move-by-move and keep 2 answers to each threat."},
+
+  {cat:"Rival",name:"Brendan / May",loc:"×10 fights",type:"Mixed",cap:0,
+   team:[["Farfetchd",""],["Manectric",""],["Slaking",""],["Salamence",""]],
+   threat:"10 escalating fights starting with a boosted Farfetch'd lead; late versions run optimized competitive teams. Their starter counters yours.",
+   plan:"Treat each like a gym fight — pull the specific roster from the tracker before triggering. Coverage-heavy; don't get swept by the starter."},
+  {cat:"Evil Team",name:"Maxie / Archie & Admins",loc:"×11 fights",type:"Mixed",cap:0,
+   team:[["Camerupt",""],["Crobat",""],["Sharpedo",""],["Mightyena",""]],
+   threat:"11 fights across Mt. Chimney, Weather Institute, Mt. Pyre, hideouts, Space Center & Seafloor Cavern. Maxie/Archie field strong, coverage-heavy teams.",
+   plan:"Many are unavoidable ambushes right after story beats — check the specific fight in the tracker before each. Respect them like gyms."},
+  {cat:"Secret",name:"Red (mini-boss)",loc:"Route 104 N & Route 113",type:"Mixed",cap:0,
+   team:[["Pikachu",""],["Snorlax",""],["Charizard",""],["Blastoise",""]],
+   threat:"Two hidden, very tough optional battles.",
+   plan:"Skip unless you're confident and want the reward. Full teams on the tracker."}
+];
+
+const CATS=["All","Gym","Elite Four","Champion","Rival","Evil Team","Secret"];
+let activeCat="All";
+const bf=document.getElementById('bossFilters');
+CATS.forEach(c=>{
+  const b=document.createElement('button');
+  b.className='filterbtn'+(c==='All'?' active':''); b.textContent=c;
+  b.onclick=()=>{activeCat=c;document.querySelectorAll('#bossFilters .filterbtn').forEach(x=>x.classList.remove('active'));b.classList.add('active');renderBosses();};
+  bf.appendChild(b);
+});
+
+function renderBosses(){
+  const q=document.getElementById('bossSearch').value.toLowerCase().trim();
+  const list=document.getElementById('bossList');
+  const items=BOSSES.filter(b=>{
+    if(activeCat!=='All'&&b.cat!==activeCat)return false;
+    if(!q)return true;
+    return (b.name+' '+b.type+' '+b.team.map(t=>t[0]).join(' ')).toLowerCase().includes(q);
+  });
+  if(!items.length){list.innerHTML='<div class="card" style="text-align:center;color:var(--muted)">No bosses match.</div>';return;}
+  list.innerHTML=items.map((b,i)=>{
+    const team=b.team.map(t=>mon(t[0],t[1])).join('');
+    const capPill=b.cap?`<span class="pill cap">Cap ${b.cap}</span>`:'';
+    return `<div class="boss" data-i="${i}">
+      <div class="boss-head" onclick="this.parentNode.classList.toggle('open')">
+        <div>
+          <div class="nm"><span class="caret">▶</span> ${b.name}</div>
+          <div class="meta">${b.loc} · <span class="pill typ" style="margin:0">${b.type}</span> ${capPill}</div>
+        </div>
+        <div class="cat">${b.cat}</div>
+      </div>
+      <div class="boss-body">
+        <div class="team">${team}</div>
+        <div class="row"><b class="thr">Biggest threats:</b> ${b.threat}</div>
+        <div class="row"><b class="pl">Game plan:</b> ${b.plan}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+renderBosses();
+
+/* ---------------- AI DATA ---------------- */
+const AI=[
+  ["🎯","Damage-maximizing","Reads type effectiveness and picks its highest-damage move. Assume it hits the super-effective button every time."],
+  ["🔀","Switch prediction","Often switches to a hard counter as you bring a threat in, and can double-switch. Bringing your check in \"for free\" is rarely free."],
+  ["🌩️","Setup & weather","Leads set Stealth Rock, weather (sand/rain/sun), Trick Room, screens or Spikes turn one. Late bosses build whole teams around it."],
+  ["☠️","Status spam","Toxic, Will-O-Wisp, Thunder Wave, Spore/Sleep Powder everywhere. Carry Lum Berries / status absorbers."],
+  ["🎒","Held items on everything","Sitrus heals ~50%, Choice locks power, Focus Sash survives an OHKO, Lum cures your status. Always assume a held item."],
+  ["⚡","Priority & speed control","Expect Aqua Jet, Mach Punch, Extreme Speed, Sucker Punch + speed manipulation. \"I'm faster\" isn't safe vs boss mons."],
+  ["🪤","Quirk to exploit","The AI can misvalue moves (status vs a resistant target; Sucker Punch when you go for status). Knowing a fight lets you bait these."]
+];
+document.getElementById('aiList').innerHTML=AI.map(a=>`<div class="ai-item"><div class="ic">${a[0]}</div><div><div class="h">${a[1]}</div><div class="b">${a[2]}</div></div></div>`).join('');
+
+/* ---------------- CAPS TABLE ---------------- */
+const CAPS=[
+  ["Roxanne","Rock",15],["Brawly","Fighting",19],["Wattson","Electric",29],
+  ["Flannery","Fire",42,1],["Norman","Normal",48],["Winona","Flying",55],
+  ["Tate & Liza","Psychic",70,1],["Wallace","Water",77],["Juan","Water",77],
+  ["Sidney (E4)","Dark","~78"],["Phoebe (E4)","Ghost","~79"],["Glacia (E4)","Ice","~80"],
+  ["Drake (E4)","Dragon","~82"],["Steven (Champ)","Steel/Rock","~85"]
+];
+document.getElementById('capTable').innerHTML=
+  '<tr><th>Boss</th><th>Type</th><th>Level Cap</th></tr>'+
+  CAPS.map(c=>`<tr><td>${c[0]}</td><td>${c[1]}</td><td${c[3]?' class="jump"':''}>${c[2]}</td></tr>`).join('');
+
+/* ---------------- RESOURCES ---------------- */
+const RES=[
+  ["🏠","Official hack thread (PokeCommunity)","The creator's thread — v2.0, patch notes & Day/Night version.","https://www.pokecommunity.com/threads/pokemon-emerald-kaizo.395830/"],
+  ["💾","Emerald Kaizo hack page (patch + readme)","Apply the patch to a clean Emerald (U) ROM.","https://www.romhacking.net/hacks/4291/"],
+  ["📋","Nuzlocke Tracker — full guide","Boss teams, abilities, held items, level caps + interactive encounter map. Track your run here.","https://nuzlocketracker.org/guides/emerald-kaizo"],
+  ["📋","Nuzlocke Redux — guide","Second source to cross-check teams.","https://nuzlockeredux.com/guides/emerald-kaizo"],
+  ["🧮","Emerald Kaizo Dynamic Calc","Pre-loaded with Kaizo stats/moves/abilities. Check the exact roll both ways before you commit. Non-negotiable.","https://hzla.github.io/Dynamic-Calc/"],
+  ["📖","Learnsets / move-change doc","Level-up moves, TMs, evo changes for the hack.","https://www.scribd.com/document/861853502/Pokemon-Emerald-Kaizo-Learnsets"],
+  ["🛠️","EKHeX (modified PKHeX)","Kaizo-aware PKHeX to preview/plan your own stats, IVs & test mons for calc planning.","https://www.romhacking.net/hacks/4291/"],
+  ["📜","Lua helper script (mGBA/BizHawk)","Convenience commands tailored to hardcore Kaizo nuzlockers.","https://github.com/UnopenedClosure/EmeraldKaizo"],
+  ["▶️","Patching + EKHeX + calc tutorial","Video walkthrough for setup.","https://www.youtube.com/watch?v=JGRTA9wz7k4"]
+];
+document.getElementById('resList').innerHTML=RES.map(r=>`<div class="res"><div class="ic">${r[0]}</div><div><div class="t"><a href="${r[3]}" target="_blank">${r[1]} ↗</a></div><div class="d">${r[2]}</div></div></div>`).join('');
+
+/* ---------------- RUN TRACKER ---------------- */
+const LOCATIONS=[
+  "Route 101","Route 102","Route 103","Petalburg Woods","Route 104","Route 116",
+  "Rusturf Tunnel","Route 105 (Surf)","Route 106","Granite Cave","Route 107",
+  "Route 108","Route 109","Route 110","Route 117","Route 111","Mt. Chimney",
+  "Route 112","Route 113","Route 114","Meteor Falls","Route 115","Route 118",
+  "Route 119","Weather Institute","Route 120","Route 121","Safari Zone",
+  "Route 122","Mt. Pyre","Route 123","Route 124 (Dive)","Shoal Cave",
+  "Route 125","Route 126","Route 127","Route 128","Seafloor Cavern",
+  "Route 129","Route 130","Route 131","Sky Pillar","Victory Road"
+];
+const TKEY="kaizodex_run_v1";
+let RUN=JSON.parse(localStorage.getItem(TKEY)||"{}");
+function saveRun(){localStorage.setItem(TKEY,JSON.stringify(RUN));}
+function setField(loc,f,v){RUN[loc]=RUN[loc]||{};RUN[loc][f]=v;saveRun();renderStats();}
+function setStatus(loc,s){RUN[loc]=RUN[loc]||{};RUN[loc].status=(RUN[loc].status===s?null:s);saveRun();renderTracker();}
+function renderStats(){
+  let team=0,box=0,dead=0,caught=0;
+  Object.values(RUN).forEach(r=>{if(r.status==='team'){team++;caught++}if(r.status==='box'){box++;caught++}if(r.status==='dead')dead++;});
+  document.getElementById('trackStats').innerHTML=
+    `<div class="stat"><div><div class="n" style="color:var(--good)">${team}</div><div class="l">On Team</div></div>
+      <div><div class="n" style="color:var(--accent2)">${box}</div><div class="l">Boxed</div></div></div>
+     <div class="stat"><div><div class="n" style="color:var(--danger)">${dead}</div><div class="l">Fallen 💀</div></div>
+      <div><div class="n">${caught}/${LOCATIONS.length}</div><div class="l">Caught</div></div></div>`;
+}
+function renderTracker(){
+  renderStats();
+  const q=(document.getElementById('trackSearch').value||'').toLowerCase().trim();
+  const f=document.getElementById('trackFilter').value;
+  const list=document.getElementById('trackList');
+  const rows=LOCATIONS.filter(loc=>{
+    const r=RUN[loc]||{};
+    const st=r.status||'none';
+    if(f!=='all'&&st!==f)return false;
+    if(q&&!(loc.toLowerCase().includes(q)||(r.species||'').toLowerCase().includes(q)))return false;
+    return true;
+  });
+  list.innerHTML=rows.map(loc=>{
+    const r=RUN[loc]||{};
+    const sp=r.species||'';
+    const img=sp?`<img src="${sprite(sp)}" onerror="this.style.opacity=.15">`:`<img src="" style="opacity:.12" alt="">`;
+    const btn=(s,lbl)=>`<button data-s="${s}" class="${r.status===s?'on':''}" onclick="setStatus('${loc.replace(/'/g,"\\'")}','${s}')">${lbl}</button>`;
+    const encL=encSpeciesFor(loc);
+    const encHtml=encL.length?`<button class="encbtn" onclick="this.parentNode.querySelector('.encpanel').classList.toggle('open')">catch options ▾</button><div class="encpanel">${encL.map(n=>`<span class="echip" onclick="pickSpecies('${loc.replace(/'/g,"\\'")}','${n.replace(/'/g,"\\'")}')"><img src="${sprite(n)}" onerror="this.style.display='none'">${n}</span>`).join('')}</div>`:'';
+    return `<div class="trk ${r.status==='dead'?'dead':''}">
+      ${img}
+      <div class="loc">${loc}<small>${r.status?({team:'On team',box:'Boxed',dead:'Fainted 💀',missed:'Missed'}[r.status]):'—'}</small></div>
+      <input class="sp" placeholder="Species" value="${sp.replace(/"/g,'&quot;')}" onchange="setField('${loc.replace(/'/g,"\\'")}','species',this.value)">
+      <input class="nk" placeholder="Nickname" value="${(r.nick||'').replace(/"/g,'&quot;')}" onchange="setField('${loc.replace(/'/g,"\\'")}','nick',this.value)">
+      <div class="st">${btn('team','Team')}${btn('box','Box')}${btn('dead','Dead')}${btn('missed','Miss')}</div>
+      ${encHtml}
+    </div>`;
+  }).join('')||'<div class="card" style="text-align:center;color:var(--muted)">Nothing matches.</div>';
+}
+function encSpeciesFor(loc){
+  const base=loc.replace(/\s*\(.*\)/,'').trim();
+  const out=[];
+  ENC.forEach(L=>{
+    if(L[0].split(' — ')[0].trim()!==base)return;
+    const land=L[1].find(g=>/grass|cave|inside|sand|tower/i.test(g[0]))||L[1][0];
+    if(land) land[1].split(',').forEach(s=>{const m=s.trim().match(/^(.+?)\s+\d+$/);const n=m?m[1]:s.trim();if(n&&!out.includes(n))out.push(n);});
+  });
+  return out;
+}
+function pickSpecies(loc,name){ RUN[loc]=RUN[loc]||{}; RUN[loc].species=name; saveRun(); renderTracker(); }
+function exportRun(){
+  let out="EMERALD KAIZO — MY RUN\n\n";
+  LOCATIONS.forEach(loc=>{const r=RUN[loc]||{};if(r.species||r.status){
+    out+=`${loc}: ${r.nick?r.nick+' the ':''}${r.species||'?'} — ${r.status||'unlogged'}\n`;}});
+  const b=new Blob([out],{type:'text/plain'});const a=document.createElement('a');
+  a.href=URL.createObjectURL(b);a.download='my-kaizo-run.txt';a.click();
+}
+function resetRun(){if(confirm('Clear your whole run log? This cannot be undone.')){RUN={};saveRun();renderTracker();}}
+
+/* ---------------- ENCOUNTERS ---------------- */
+/* [Location, [[method, "Name pct, Name pct, ..."], ...]] — Emerald Kaizo v2.0 wild data */
+const ENC=[
+["Littleroot Town",[["Surf","Squirtle 60, Totodile 30, Croconaw 5, Wartortle 5"],["Old Rod","Luvdisc 70, Goldeen 30"],["Good Rod","Corphish 60, Goldeen 20, Poliwhirl 20"],["Super Rod","Luvdisc 41, Seaking 40, Poliwhirl 15, Crawdaunt 4"]]],
+["Route 101",[["Grass","Wurmple 20, Poochyena 20, Caterpie 10, Weedle 10, Sentret 10, Pidgey 10, Zigzagoon 5, Rattata 5, Togepi 4, Igglybuff 4, Cleffa 1, Pichu 1"]]],
+["Oldale Town",[["Grass","Vulpix 21, Slugma 20, Numel 20, Growlithe 20, Ponyta 6, Magby 5, Cyndaquil 4, Charmander 4"]]],
+["Route 103",[["Grass","Sunkern 20, Wingull 20, Ledyba 10, Spearow 10, Skitty 10, Ekans 10, Mareep 5, Hoppip 5, Poliwag 4, Spoink 4, Aipom 1, Taillow 1"],["Surf","Kingler 60, Seaking 30, Qwilfish 5, Mantine 5"],["Super Rod","Qwilfish 40, Octillery 40, Kingler 15, Seaking 5"]]],
+["Route 102",[["Grass","Meowth 20, Sandshrew 20, Nidoran♂ 10, Electrike 10, Hoothoot 10, Gulpin 10, Spinarak 5, Spoink 5, Farfetch'd 4, Ralts 4, Minun 1, Pikachu 1"],["Surf","Luvdisc 60, Seaking 30, Carvanha 5, Poliwrath 4, Politoed 1"],["Super Rod","Golduck 40, Whiscash 40, Seaking 20"]]],
+["Petalburg City",[["Grass","Krabby 20, Corphish 20, Psyduck 15, Poliwag 15, Surskit 10, Marill 10, Totodile 4, Squirtle 4, Slowpoke 2"],["Surf","Crawdaunt 60, Golduck 30, Whiscash 5, Azumarill 4, Poliwrath 1"],["Super Rod","Golduck 40, Seaking 40, Poliwhirl 15, Crawdaunt 4, Azumarill 1"]]],
+["Route 104",[["Grass","Jigglypuff 20, Cubone 20, Seedot 10, Snubbull 10, Nidoran♀ 10, Natu 10, Mareep 5, Spoink 5, Hoothoot 4, Venonat 4, Drowzee 1, Elekid 1"],["Surf","Seaking 60, Pelipper 30, Swellow 5, Pidgeot 4, Wartortle 1"],["Super Rod","Magikarp 99, Gyarados 1"]]],
+["Petalburg Woods",[["Grass","Oddish 20, Hoothoot 20, Phanpy 10, Teddiursa 10, Bellsprout 10, Pineco 10, Illumise 5, Volbeat 5, Cascoon 4, Silcoon 4, Mankey 1, Slakoth 1"]]],
+["Rustboro City",[["Grass","Shroomish 20, Seedot 20, Cacnea 10, Bellsprout 10, Oddish 10, Hoppip 10, Sunkern 5, Roselia 5, Chikorita 4, Bulbasaur 4, Exeggcute 1, Lotad 1"]]],
+["Route 116",[["Grass","Grimer 20, Makuhita 20, Yanma 10, Natu 10, Paras 10, Voltorb 10, Spoink 5, Chimecho 5, Ralts 4, Unown 4, Kakuna 1, Metapod 1"]]],
+["Rusturf Tunnel",[["Cave","Nosepass 20, Geodude 20, Onix 14, Rhyhorn 10, Phanpy 10, Sandshrew 10, Dunsparce 5, Cubone 5, Swinub 4, Whismur 1, Zubat 1"]]],
+["Route 105",[["Surf","Unown 60, Mantine 30, Octillery 5, Qwilfish 4, Relicanth 1"],["Super Rod","Mantine 40, Relicanth 40, Sharpedo 19, Wailmer 1"]]],
+["Route 106",[["Surf","Seel 60, Spheal 30, Shellder 5, Dewgong 4, Sealeo 1"],["Super Rod","Seel 40, Spheal 40, Sealeo 15, Dewgong 5"]]],
+["Dewford Town",[["Grass","Makuhita 34, Mankey 29, Machop 20, Tyrogue 16, Meditite 1"],["Surf","Corsola 60, Seel 30, Spheal 5, Krabby 4, Slowpoke 1"],["Super Rod","Huntail 40, Dewgong 40, Cloyster 15, Gorebyss 4, Walrein 1"]]],
+["Granite Cave — 1F",[["Cave","Aron 25, Mawile 25, Spoink 14, Clefairy 10, Spinda 10, Teddiursa 10, Ralts 4, Drowzee 1, Chimecho 1"]]],
+["Granite Cave — Steven's Room",[["Cave","Spoink 20, Ralts 20, Onix 10, Voltorb 10, Spinda 10, Magnemite 10, Nosepass 5, Makuhita 5, Aron 4, Dunsparce 4, Clefairy 1, Abra 1"]]],
+["Granite Cave — B1F",[["Cave","Seel 24, Smoochum 21, Delibird 10, Sneasel 10, Swinub 10, Snorunt 10, Spheal 9, Shellder 6"]]],
+["Granite Cave — B2F",[["Cave","Snorunt 21, Swinub 21, Smoochum 15, Shellder 15, Seel 14, Spheal 14"]]],
+["Route 107",[["Surf","Corsola 60, Huntail 30, Lanturn 5, Clamperl 4, Gorebyss 1"],["Super Rod","Seel 40, Spheal 40, Cloyster 15, Sealeo 5"]]],
+["Route 108",[["Surf","Sharpedo 60, Tentacruel 30, Seviper 5, Qwilfish 4, Gyarados 1"],["Super Rod","Sharpedo 99, Wailmer 1"]]],
+["Route 109",[["Surf","Pelipper 60, Kingler 30, Seaking 5, Wartortle 4, Blastoise 1"],["Super Rod","Sharpedo 56, Wartortle 40, Mantine 4"]]],
+["Slateport City",[["Grass","Mareep 20, Elekid 20, Electrike 14, Pikachu 10, Voltorb 14, Minun 10, Plusle 5, Pichu 5, Magnemite 1, Flaaffy 1"]]],
+["Route 110",[["Grass","Delcatty 20, Roselia 20, Pidgeotto 10, Murkrow 10, Nuzleaf 10, Skiploom 10, Tropius 5, Togetic 5, Lickitung 4, Kecleon 4, Oddish 1, Poochyena 1"],["Surf","Chinchou 60, Seaking 30, Croconaw 5, Feraligatr 4, Lanturn 1"],["Super Rod","Lanturn 40, Mantine 40, Sharpedo 16, Whiscash 4"]]],
+["Mauville City",[["Grass","Elekid 20, Pikachu 20, Voltorb 15, Magnemite 14, Mareep 10, Porygon 10, Electrike 5, Pichu 4, Flaaffy 2"]]],
+["Route 117",[["Grass","Beautifly 20, Dustox 20, Oddish 10, Volbeat 10, Illumise 10, Ledian 10, Ariados 5, Beedrill 5, Butterfree 4, Nuzleaf 4, Shroomish 1, Vulpix 1"],["Surf","Azumarill 60, Seaking 30, Politoed 5, Golduck 4, Poliwrath 1"],["Super Rod","Crawdaunt 40, Kingler 40, Psyduck 15, Golduck 5"]]],
+["Verdanturf Town",[["Grass","Sandshrew 24, Phanpy 21, Rhyhorn 15, Cubone 14, Geodude 10, Swinub 10, Numel 5, Sunflora 1"]]],
+["Route 111",[["Sand","Trapinch 20, Diglett 20, Sandslash 10, Cacturne 10, Donphan 10, Arbok 10, Rhyhorn 5, Nidoqueen 5, Nidoking 4, Dugtrio 4, Claydol 1, Vibrava 1"],["Surf","Poliwhirl 60, Psyduck 30, Carvanha 5, Marill 5"],["Super Rod","Barboach 100"]]],
+["Route 112",[["Grass","Ponyta 20, Vulpix 20, Numel 10, Spoink 10, Absol 10, Sandshrew 10, Skiploom 5, Natu 5, Snubbull 4, Growlithe 4, Flareon 1, Mightyena 1"]]],
+["Fiery Path",[["Cave","Torkoal 20, Magcargo 20, Ponyta 10, Growlithe 10, Vulpix 10, Magby 10, Koffing 5, Quilava 5, Flareon 4, Charmeleon 4, Numel 1, Magmar 1"]]],
+["Route 113",[["Grass","Noctowl 20, Shroomish 20, Parasect 10, Koffing 10, Rhyhorn 10, Magby 10, Phanpy 5, Teddiursa 5, Gloom 4, Numel 4, Torkoal 1, Absol 1"]]],
+["Fallarbor Town",[["Grass","Aron 20, Sudowoodo 20, Stantler 10, Noctowl 10, Persian 10, Mawile 10, Rapidash 5, Nosepass 5, Spinda 4, Seviper 4, Zangoose 1, Golduck 1"]]],
+["Route 114",[["Grass","Pikachu 20, Swablu 20, Spinda 10, Zangoose 10, Nuzleaf 10, Stantler 10, Sudowoodo 5, Electrike 5, Swalot 4, Seviper 4, Lombre 1, Lotad 1"]]],
+["Meteor Falls — 1F 1R",[["Cave","Clefairy 20, Porygon 20, Lairon 10, Parasect 10, Golbat 10, Dunsparce 10, Loudred 5, Solrock 5, Lunatone 4, Unown 4, Cleffa 1, Clefable 1"],["Surf","Lunatone 60, Solrock 30, Seviper 5, Gyarados 4, Whiscash 1"],["Super Rod","Whiscash 40, Muk 40, Gyarados 15, Staryu 4, Starmie 1"]]],
+["Meteor Falls — 1F 2R",[["Cave","Wobbuffet 20, Electrode 20, Crobat 10, Solrock 10, Lunatone 10, Clefable 10, Clefairy 5, Metang 5, Shelgon 4, Bagon 4, Beldum 2"],["Surf","Armaldo 60, Starmie 30, Solrock 5, Lunatone 4, Cradily 1"],["Super Rod","Whiscash 40, Gyarados 40, Kingdra 15, Feebas 4, Lapras 1"]]],
+["Meteor Falls — B1F 1R",[["Cave","Crobat 20, Lunatone 20, Claydol 10, Solrock 10, Clefairy 10, Cleffa 10, Clefable 5, Aggron 5, Wobbuffet 4, Gardevoir 4, Flygon 2"],["Super Rod","Crawdaunt 40, Gyarados 40, Feebas 15, Staryu 4, Milotic 1"]]],
+["Meteor Falls — B1F 2R",[["Cave","Wobbuffet 20, Lunatone 20, Solrock 10, Dugtrio 10, Clefable 10, Clefairy 10, Claydol 5, Flygon 5, Salamence 4, Metagross 4, Larvitar 1, Pupitar 1"],["Surf","Gyarados 60, Solrock 30, Lapras 5, Lunatone 4, Dragonair 1"],["Super Rod","Staryu 40, Dragonair 40, Milotic 15, Dratini 5"]]],
+["Route 115",[["Grass","Swablu 20, Clefairy 20, Eevee 10, Absol 10, Wigglytuff 10, Swellow 10, Beldum 9, Kangaskhan 5, Bagon 4, Shelgon 1, Metang 1"],["Surf","Tentacool 60, Qwilfish 30, Relicanth 5, Kabuto 4, Omanyte 1"],["Super Rod","Kabutops 44, Relicanth 40, Omastar 16"]]],
+["Jagged Pass",[["Grass","Numel 20, Magcargo 20, Machoke 10, Spoink 10, Ponyta 10, Mankey 10, Koffing 5, Grimer 5, Doduo 4, Onix 4, Quilava 1, Rapidash 1"]]],
+["Team Magma Hideout — Room 1",[["Inside","Camerupt 20, Weezing 20, Dugtrio 10, Torkoal 10, Golem 10, Magmar 10, Mightyena 5, Typhlosion 5, Golbat 4, Rhydon 4, Aggron 1, Magcargo 1"]]],
+["Team Magma Hideout — Room 4",[["Inside","Electrode 20, Weezing 20, Wobbuffet 10, Dunsparce 10, Steelix 10, Aggron 10, Dugtrio 5, Crobat 5, Electabuzz 4, Arcanine 4, Lunatone 2"]]],
+["Team Magma Hideout — Room 6",[["Inside","Dugtrio 20, Magmar 20, Electrode 10, Torkoal 10, Golem 10, Aggron 10, Rhydon 5, Typhlosion 5, Charizard 4, Claydol 4, Blaziken 1, Combusken 1"]]],
+["Lavaridge Town",[["Grass","Torkoal 20, Vulpix 20, Magby 15, Ponyta 14, Growlithe 10, Flareon 10, Numel 5, Quilava 4, Charmeleon 2"]]],
+["Mirage Tower — 1F",[["Tower","Cacnea 20, Trapinch 20, Sandshrew 10, Diglett 10, Phanpy 10, Numel 10, Baltoy 5, Cubone 5, Rhyhorn 4, Onix 4, Unown 2"]]],
+["Mirage Tower — 4F",[["Tower","Bagon 100"]]],
+["Route 118",[["Grass","Growlithe 20, Manectric 20, Vulpix 10, Rapidash 10, Grumpig 10, Nuzleaf 10, Weepinbell 5, Gloom 5, Nidorina 4, Nidorino 4, Pikachu 1, Exeggcute 1"],["Surf","Tentacool 60, Chinchou 30, Mantine 5, Qwilfish 4, Octillery 1"],["Super Rod","Sharpedo 40, Mantine 40, Octillery 15, Qwilfish 5"]]],
+["Route 119",[["Grass","Zangoose 20, Tangela 20, Breloom 10, Absol 10, Seviper 10, Scyther 10, Linoone 5, Tropius 5, Furret 4, Raticate 4, Pinsir 1, Scizor 1"],["Surf","Golduck 60, Pelipper 30, Whiscash 5, Carvanha 4, Feraligatr 1"],["Super Rod","Gyarados 40, Poliwrath 40, Whiscash 15, Feraligatr 4, Blastoise 1"]]],
+["Fortree City",[["Grass","Pidgeot 20, Fearow 20, Swellow 14, Pelipper 10, Noctowl 10, Tropius 10, Swablu 5, Altaria 5, Dodrio 4, Pineco 1, Shiftry 1"]]],
+["Route 120",[["Grass","Scyther 20, Absol 20, Zangoose 10, Pinsir 10, Kecleon 10, Primeape 10, Tangela 5, Azumarill 5, Seviper 4, Spoink 4, Linoone 1, Scizor 1"],["Surf","Azumarill 60, Fearow 30, Whiscash 5, Seaking 4, Golduck 1"],["Super Rod","Crawdaunt 40, Kingler 40, Slowpoke 15, Slowking 4, Slowbro 1"]]],
+["Scorched Slab",[["Grass","Vulpix 20, Growlithe 20, Rapidash 10, Quilava 10, Charmeleon 10, Ninetales 10, Manectric 5, Magby 5, Magmar 4, Torkoal 4, Flareon 1, Arcanine 1"]]],
+["Route 121",[["Grass","Absol 20, Exeggcute 20, Tropius 10, Exploud 10, Rapidash 10, Pidgeot 10, Stantler 5, Gloom 5, Weepinbell 4, Jumpluff 4, Arcanine 1, Pinsir 1"],["Surf","Crawdaunt 60, Octillery 30, Tentacool 5, Pelipper 5"],["Super Rod","Octillery 40, Seviper 40, Tentacruel 15, Relicanth 5"]]],
+["Safari Zone — Area 1 SE",[["Grass","Vileplume 20, Granbull 20, Girafarig 10, Victreebel 10, Rapidash 10, Dodrio 10, Vigoroth 5, Forretress 5, Primeape 4, Grovyle 4, Ivysaur 2"]]],
+["Safari Zone — Area 3 NW",[["Grass","Eevee 20, Flareon 20, Espeon 10, Umbreon 10, Vaporeon 10, Jolteon 10, Kangaskhan 5, Rhydon 5, Dodrio 4, Miltank 4, Tauros 1, Snorlax 1"],["Super Rod","Croconaw 40, Totodile 40, Quagsire 15, Marshtomp 4, Mudkip 1"]]],
+["Safari Zone — Area 5 Ext SE",[["Grass","Venusaur 20, Meganium 20, Ampharos 10, Skarmory 10, Smeargle 11, Shuckle 10, Gligar 6, Tauros 5, Stantler 4, Houndoom 4"],["Super Rod","Milotic 100"]]],
+["Safari Zone — Area 6 Ext NE",[["Grass","Heracross 20, Snorlax 20, Chansey 10, Shuckle 10, Nincada 10, Ninjask 10, Venusaur 5, Meganium 5, Miltank 5, Houndoom 4, Houndour 1"]]],
+["Route 122",[["Surf","Golduck 60, Golbat 30, Sharpedo 5, Pelipper 5"],["Super Rod","Tentacruel 55, Gastly 40, Qwilfish 5"]]],
+["Mt. Pyre — Summit",[["Grass","Banette 20, Absol 20, Cacturne 10, Marowak 10, Hypno 10, Shiftry 10, Noctowl 5, Jynx 5, Espeon 4, Gengar 4, Gardevoir 1, Umbreon 1"]]],
+["Mt. Pyre — Exterior",[["Grass","Noctowl 20, Ninetales 20, Marowak 10, Cacturne 10, Banette 10, Absol 10, Murkrow 5, Shiftry 5, Persian 4, Misdreavus 4, Hypno 1, Umbreon 1"]]],
+["Route 123",[["Grass","Wobbuffet 20, Tauros 20, Ludicolo 10, Arcanine 10, Medicham 10, Slaking 10, Skarmory 5, Duskull 5, Miltank 4, Heracross 4, Snorlax 2"],["Surf","Crawdaunt 60, Qwilfish 30, Sharpedo 5, Gyarados 4, Lombre 1"],["Super Rod","Feraligatr 40, Crawdaunt 40, Seaking 15, Blastoise 5"]]],
+["Lilycove City",[["Grass","Granbull 20, Jumpluff 20, Blastoise 10, Vileplume 10, Bellossom 10, Wigglytuff 10, Lickitung 6, Togetic 5, Feraligatr 5, Exploud 4"],["Surf","Sharpedo 60, Crawdaunt 30, Kingler 5, Octillery 4, Blastoise 1"],["Super Rod","Sharpedo 40, Tentacruel 40, Cloyster 15, Gyarados 4, Lanturn 1"]]],
+["Route 124",[["Surf","Qwilfish 60, Mantine 30, Tentacruel 5, Pelipper 5"],["Super Rod","Sharpedo 40, Octillery 40, Mantine 15, Lanturn 5"]]],
+["Mossdeep City",[["Grass","Ralts 20, Abra 20, Spoink 10, Mr. Mime 10, Exeggcute 10, Slowpoke 10, Girafarig 5, Drowzee 5, Xatu 4, Chimecho 4, Espeon 1, Jynx 1"],["Surf","Mantine 60, Octillery 30, Seaking 5, Relicanth 4, Tentacruel 1"],["Super Rod","Gorebyss 40, Cloyster 40, Kingler 15, Crawdaunt 4, Sharpedo 1"]]],
+["Route 125",[["Surf","Dewgong 60, Walrein 30, Cloyster 5, Slowking 4, Slowbro 1"],["Super Rod","Cloyster 40, Dewgong 40, Walrein 15, Sharpedo 5"]]],
+["Shoal Cave — Entrance",[["Cave","Spheal 20, Seel 20, Sealeo 10, Smoochum 10, Swinub 10, Slowpoke 10, Shellder 5, Delibird 5, Kingler 4, Golduck 4, Cloyster 1, Walrein 1"],["Surf","Sealeo 60, Dewgong 30, Shellder 5, Slowbro 4, Walrein 1"]]],
+["Shoal Cave — Ice Room",[["Cave","Dugtrio 20, Jynx 20, Dewgong 10, Cloyster 10, Piloswine 10, Glalie 10, Walrein 5, Slowbro 5, Slowking 4, Wobbuffet 4, Hariyama 1, Lapras 1"]]],
+["Route 127",[["Surf","Sharpedo 60, Mantine 30, Qwilfish 5, Tentacruel 5"],["Super Rod","Sharpedo 40, Kabutops 40, Omastar 15, Lanturn 5"]]],
+["Route 128",[["Surf","Sharpedo 60, Lanturn 30, Tentacruel 5, Jumpluff 4, Gyarados 1"],["Super Rod","Corsola 40, Octillery 40, Relicanth 15, Armaldo 4, Cradily 1"]]],
+["Seafloor Cavern — Entrance",[["Surf","Crobat 60, Gyarados 30, Feraligatr 5, Tentacruel 5"],["Super Rod","Blastoise 40, Sharpedo 40, Relicanth 15, Walrein 5"]]],
+["Seafloor Cavern — Room 5",[["Cave","Wobbuffet 20, Glalie 20, Jynx 10, Piloswine 10, Walrein 10, Dugtrio 10, Armaldo 5, Dewgong 5, Misdreavus 4, Gyarados 4, Dunsparce 1, Steelix 1"]]],
+["Route 126",[["Surf","Poliwrath 60, Feraligatr 30, Blastoise 5, Seaking 5"],["Super Rod","Sharpedo 40, Corsola 40, Gyarados 15, Octillery 5"]]],
+["Sootopolis City",[["Grass","Heracross 40, Lotad 29, Lombre 29, Ludicolo 2"],["Surf","Mantine 60, Relicanth 30, Octillery 5, Magikarp 5"],["Super Rod","Armaldo 40, Omastar 40, Gorebyss 15, Cradily 5"]]],
+["Cave of Origin — Entrance",[["Cave","Misdreavus 20, Xatu 20, Marowak 10, Banette 10, Kadabra 10, Absol 10, Haunter 5, Persian 5, Hypno 4, Crobat 4, Gardevoir 1, Gengar 1"]]],
+["Cave of Origin — 4F",[["Cave","Wobbuffet 20, Crobat 20, Ninetales 10, Gardevoir 10, Alakazam 10, Dugtrio 10, Marowak 5, Misdreavus 5, Duskull 4, Gengar 4, Houndoom 1, Aerodactyl 1"]]],
+["Route 129",[["Surf","Pelipper 60, Qwilfish 30, Octillery 5, Tentacruel 4, Gyarados 1"],["Super Rod","Relicanth 40, Lanturn 40, Armaldo 15, Cradily 5"]]],
+["Route 130",[["Surf","Qwilfish 60, Mantine 30, Huntail 5, Dewgong 4, Gorebyss 1"],["Super Rod","Sharpedo 40, Slowbro 40, Octillery 15, Relicanth 5"]]],
+["Mirage Island",[["Grass","Sableye 20, Shuckle 20, Tauros 10, Snorlax 10, Blissey 10, Dusclops 10, Shedinja 5, Ninjask 5, Tyranitar 4, Salamence 4, Metagross 1, Dragonite 1"]]],
+["Route 131",[["Surf","Qwilfish 60, Mantine 30, Misdreavus 5, Dewgong 4, Altaria 1"],["Super Rod","Relicanth 40, Qwilfish 40, Tentacruel 15, Lanturn 5"]]],
+["Sky Pillar — 1F",[["Inside","Gengar 20, Xatu 20, Dugtrio 10, Altaria 10, Shiftry 10, Flygon 10, Banette 5, Claydol 5, Misdreavus 4, Unown 4, Crobat 1, Noctowl 1"]]],
+["Sky Pillar — 5F",[["Inside","Wobbuffet 20, Electrode 20, Crobat 10, Castform 10, Dugtrio 10, Venomoth 5, Xatu 5, Claydol 4, Altaria 4, Flygon 1, Unown 1"]]],
+["Abandoned Ship — 1F",[["Surf","Sharpedo 60, Gyarados 30, Muk 5, Kingdra 4, Vaporeon 1"],["Super Rod","Sharpedo 40, Muk 40, Kingdra 15, Tentacruel 4, Wailmer 1"]]],
+["New Mauville — Entrance",[["Inside","Electrode 20, Plusle 20, Minun 10, Magneton 10, Raichu 10, Manectric 10, Porygon 5, Electabuzz 5, Ampharos 4, Flaaffy 4, Voltorb 1, Pikachu 1"]]],
+["New Mauville — Interior",[["Inside","Electrode 20, Raichu 20, Muk 10, Porygon 10, Manectric 10, Voltorb 5, Ampharos 5, Electabuzz 4, Porygon2 4, Jolteon 1, Pikachu 1"]]],
+["Pacifidlog Town",[["Surf","Octillery 60, Mantine 30, Blastoise 5, Relicanth 4, Corsola 1"],["Super Rod","Kabutops 40, Clamperl 40, Cloyster 15, Omastar 4, Seadra 1"]]],
+["Route 132",[["Surf","Tentacruel 60, Relicanth 30, Seadra 5, Staryu 4, Wailmer 1"],["Super Rod","Sharpedo 40, Lanturn 40, Tentacruel 15, Luvdisc 4, Wailmer 1"]]],
+["Route 133",[["Surf","Staryu 60, Sharpedo 30, Gyarados 5, Lapras 4, Wailord 1"],["Super Rod","Sharpedo 40, Wailmer 40, Kingdra 15, Lapras 4, Wailord 1"]]],
+["Route 134",[["Surf","Horsea 60, Seadra 30, Remoraid 5, Seaking 4, Seadra 1"],["Super Rod","Corsola 40, Mantine 40, Horsea 15, Chinchou 5"]]],
+["Ever Grande City",[["Grass","Torchic 25, Treecko 25, Combusken 10, Grovyle 10, Blaziken 10, Sceptile 10, Eevee 4, Marshtomp 4, Mudkip 1, Swampert 1"],["Surf","Blastoise 60, Feraligatr 30, Gyarados 5, Sharpedo 4, Lanturn 1"],["Super Rod","Luvdisc 81, Corsola 19"]]],
+["Victory Road — 1F",[["Cave","Wobbuffet 20, Crobat 20, Electrode 10, Dodrio 10, Dugtrio 10, Medicham 10, Kangaskhan 5, Jynx 5, Electabuzz 4, Mr. Mime 4, Exploud 2"]]],
+["Victory Road — B1F",[["Cave","Wobbuffet 20, Dugtrio 20, Electrode 10, Crobat 10, Banette 10, Machamp 10, Blastoise 5, Hariyama 5, Golem 4, Hypno 4, Venomoth 2"]]],
+["Victory Road — B2F",[["Cave","Electrode 20, Wobbuffet 20, Crobat 10, Dugtrio 10, Muk 10, Golduck 10, Arcanine 5, Nidoking 5, Ursaring 4, Grumpig 4, Granbull 2"],["Surf","Crobat 60, Muk 30, Sharpedo 5, Weezing 5"],["Super Rod","Muk 40, Feraligatr 40, Blastoise 15, Lapras 4, Quagsire 1"]]],
+["Artisan Cave (Postgame)",[["Cave","Smeargle 52, Blissey 14, Wynaut 10, Wobbuffet 10, Chansey 10, Shuckle 4"]]],
+["Altering Cave (Postgame)",[["Cave","Houndour 25, Nincada 20, Wynaut 15, Shedinja 10, Ninjask 10, Wobbuffet 10, Shuckle 5, Sableye 4, Houndoom 2"]]]
+];
+
+function hl(text,q){ if(!q) return text; const i=text.toLowerCase().indexOf(q); if(i<0) return text; return text.slice(0,i)+'<mark>'+text.slice(i,i+q.length)+'</mark>'+text.slice(i+q.length); }
+function methodClass(m){ if(/rod/i.test(m))return 'Rod'; if(/surf/i.test(m))return 'Surf'; if(/cave|inside|tower|sand/i.test(m))return 'Cave'; return 'Grass'; }
+function renderEnc(){
+  const q=(document.getElementById('encSearch').value||'').toLowerCase().trim();
+  const mf=document.getElementById('encMethod').value;
+  const list=document.getElementById('encList');
+  let html='';
+  ENC.forEach((L,li)=>{
+    const loc=L[0];
+    const locMatch=loc.toLowerCase().includes(q);
+    let groups='';
+    let anyMon=false, autoOpen=false;
+    L[1].forEach(g=>{
+      const mcls=methodClass(g[0]);
+      if(mf!=='all'&&mcls!==mf)return;
+      const mons=g[1].split(',').map(s=>s.trim()).filter(Boolean);
+      const filtered=mons.filter(ms=>{
+        if(!q||locMatch)return true;
+        return ms.toLowerCase().includes(q);
+      });
+      if(q&&!locMatch&&!filtered.length)return;
+      anyMon=true;
+      if(q&&!locMatch)autoOpen=true;
+      const cells=(q&&!locMatch?filtered:mons).map(ms=>{
+        const m=ms.match(/^(.+?)\s+(\d+)$/); const nm=m?m[1]:ms; const rt=m?m[2]:'';
+        const rare=rt&&+rt<=5?' rare':'';
+        return `<div class="em${rare}"><img loading="lazy" src="${sprite(nm)}" onerror="this.style.opacity=.15"><div class="en">${hl(nm,q&&!locMatch?q:'')}</div><div class="er">${rt}%</div></div>`;
+      }).join('');
+      groups+=`<div class="meth">${g[0]}</div><div class="mons">${cells}</div>`;
+    });
+    if(mf!=='all'&&!anyMon)return;
+    if(q&&!locMatch&&!anyMon)return;
+    if(!groups)return;
+    html+=`<div class="enc${autoOpen?' open':''}"><div class="enc-h" onclick="this.parentNode.classList.toggle('open')"><span class="caret">▶</span> ${hl(loc,locMatch?q:'')}</div><div class="enc-b">${groups}</div></div>`;
+  });
+  list.innerHTML=html||'<div class="card" style="text-align:center;color:var(--muted)">No matches.</div>';
+}
+renderEnc();
+renderTracker();
+
+/* ---------------- DAMAGE CALCULATOR ---------------- */
+const TYPES=["Normal","Fire","Water","Electric","Grass","Ice","Fighting","Poison","Ground","Flying","Psychic","Bug","Rock","Ghost","Dragon","Dark","Steel"];
+// attacker -> {defender:mult} for entries != 1 (Gen 3 chart, no Fairy)
+const CHART={
+ Normal:{Rock:.5,Steel:.5,Ghost:0},
+ Fire:{Fire:.5,Water:.5,Grass:2,Ice:2,Bug:2,Rock:.5,Dragon:.5,Steel:2},
+ Water:{Fire:2,Water:.5,Grass:.5,Ground:2,Rock:2,Dragon:.5},
+ Electric:{Water:2,Electric:.5,Grass:.5,Ground:0,Flying:2,Dragon:.5},
+ Grass:{Fire:.5,Water:2,Grass:.5,Poison:.5,Ground:2,Flying:.5,Bug:.5,Rock:2,Dragon:.5,Steel:.5},
+ Ice:{Fire:.5,Water:.5,Grass:2,Ice:.5,Ground:2,Flying:2,Dragon:2,Steel:.5},
+ Fighting:{Normal:2,Ice:2,Poison:.5,Flying:.5,Psychic:.5,Bug:.5,Rock:2,Ghost:0,Dark:2,Steel:2},
+ Poison:{Grass:2,Poison:.5,Ground:.5,Rock:.5,Ghost:.5,Steel:0},
+ Ground:{Fire:2,Electric:2,Grass:.5,Poison:2,Flying:0,Bug:.5,Rock:2,Steel:2},
+ Flying:{Electric:.5,Grass:2,Fighting:2,Bug:2,Rock:.5,Steel:.5},
+ Psychic:{Fighting:2,Poison:2,Psychic:.5,Dark:0,Steel:.5},
+ Bug:{Fire:.5,Grass:2,Fighting:.5,Poison:.5,Flying:.5,Psychic:2,Ghost:.5,Dark:2,Steel:.5},
+ Rock:{Fire:2,Ice:2,Fighting:.5,Ground:.5,Flying:2,Bug:2,Steel:.5},
+ Ghost:{Normal:0,Psychic:2,Ghost:2,Dark:.5,Steel:.5},
+ Dragon:{Dragon:2,Steel:.5},
+ Dark:{Fighting:.5,Psychic:2,Ghost:2,Dark:.5,Steel:.5},
+ Steel:{Fire:.5,Water:.5,Electric:.5,Ice:2,Rock:2,Steel:.5}
+};
+function eff(mv,t1,t2){ let e=1; if(CHART[mv]){ if(t1&&CHART[mv][t1]!==undefined)e*=CHART[mv][t1]; if(t2&&t2!==t1&&CHART[mv][t2]!==undefined)e*=CHART[mv][t2]; } return e; }
+// Species dataset: name:[type1,type2,HP,Atk,Def,SpA,SpD] (vanilla base — edit for Kaizo)
+const POKE={
+ "Swampert":["Water","Ground",100,110,90,85,90],"Sceptile":["Grass","",70,85,65,105,85],"Blaziken":["Fire","Fighting",80,120,70,110,70],
+ "Marshtomp":["Water","Ground",70,85,70,60,70],"Grovyle":["Grass","",50,65,45,85,65],"Combusken":["Fire","Fighting",60,85,60,85,60],
+ "Gardevoir":["Psychic","",68,65,65,125,115],"Slaking":["Normal","",150,160,100,95,65],"Aggron":["Steel","Rock",70,110,180,60,60],
+ "Metagross":["Steel","Psychic",80,135,130,95,90],"Salamence":["Dragon","Flying",95,135,80,110,80],"Milotic":["Water","",95,60,79,100,125],
+ "Kingdra":["Water","Dragon",75,95,95,95,95],"Ludicolo":["Water","Grass",80,70,70,90,100],"Latias":["Dragon","Psychic",80,80,90,110,130],
+ "Latios":["Dragon","Psychic",80,90,80,130,110],"Medicham":["Fighting","Psychic",60,60,75,60,75],"Starmie":["Water","Psychic",60,75,85,100,85],
+ "Jirachi":["Steel","Psychic",100,100,100,100,100],"Zapdos":["Electric","Flying",90,90,85,125,90],"Moltres":["Fire","Flying",90,100,90,125,85],
+ "Articuno":["Ice","Flying",90,85,100,95,125],"Aerodactyl":["Rock","Flying",80,105,65,60,75],"Crobat":["Poison","Flying",85,90,80,70,80],
+ "Flygon":["Ground","Dragon",80,100,80,80,80],"Skarmory":["Steel","Flying",65,80,140,40,70],"Absol":["Dark","",65,130,60,75,60],
+ "Shiftry":["Grass","Dark",90,100,60,90,60],"Cacturne":["Grass","Dark",70,115,60,115,60],"Crawdaunt":["Water","Dark",63,120,85,90,55],
+ "Mightyena":["Dark","",70,90,70,60,60],"Sharpedo":["Water","Dark",70,120,40,95,40],"Dusclops":["Ghost","",40,70,130,60,130],
+ "Banette":["Ghost","",64,115,65,83,63],"Sableye":["Dark","Ghost",50,75,75,65,65],"Gengar":["Ghost","Poison",60,65,60,130,75],
+ "Walrein":["Ice","Water",110,80,90,95,90],"Glalie":["Ice","",80,80,80,80,80],"Froslass":["Ice","Ghost",70,80,70,80,70],
+ "Lapras":["Water","Ice",130,85,80,85,95],"Weavile":["Dark","Ice",70,120,65,45,85],"Jynx":["Ice","Psychic",65,50,35,115,95],
+ "Dragonite":["Dragon","Flying",91,134,95,100,100],"Altaria":["Dragon","Flying",75,70,90,70,105],"Cradily":["Rock","Grass",86,81,97,81,107],
+ "Armaldo":["Rock","Bug",75,125,100,70,80],"Hariyama":["Fighting","",144,120,60,40,60],"Machamp":["Fighting","",90,130,80,65,85],
+ "Snorlax":["Normal","",160,110,65,65,110],"Tauros":["Normal","",75,100,95,40,70],"Kangaskhan":["Normal","",105,95,80,40,80],
+ "Swellow":["Normal","Flying",60,85,60,50,50],"Espeon":["Psychic","",65,65,60,130,95],"Ninetales":["Fire","",73,76,75,81,100],
+ "Charizard":["Fire","Flying",78,84,78,109,85],"Arcanine":["Fire","",90,110,80,100,80],"Typhlosion":["Fire","",78,84,78,109,85],
+ "Manectric":["Electric","",70,75,60,105,60],"Ampharos":["Electric","",90,75,85,115,90],"Jolteon":["Electric","",65,65,60,110,95],
+ "Lanturn":["Water","Electric",125,58,58,76,76],"Raichu":["Electric","",60,90,55,90,80],"Electabuzz":["Electric","",65,83,57,95,85],
+ "Nosepass":["Rock","",30,45,135,45,90],"Shuckle":["Bug","Rock",20,10,230,10,230],"Relicanth":["Water","Rock",100,90,130,45,65],
+ "Lunatone":["Rock","Psychic",90,55,65,95,85],"Lileep":["Rock","Grass",66,41,77,61,87],"Anorith":["Rock","Bug",45,95,50,40,50],
+ "Vaporeon":["Water","",130,65,60,110,95],"Castform":["Normal","",70,70,70,70,70],"Poliwrath":["Water","Fighting",90,95,95,70,90],
+ "Meditite":["Fighting","Psychic",30,40,55,40,55],"Hitmonlee":["Fighting","",50,120,53,35,110],"Hitmonchan":["Fighting","",50,105,79,35,110],
+ "Hitmontop":["Fighting","",50,95,95,35,110],"Trapinch":["Ground","",45,100,45,45,45],"Geodude":["Rock","Ground",40,80,100,30,30],
+ "Zangoose":["Normal","",73,115,60,60,60],"Breloom":["Grass","Fighting",60,130,80,60,60],"Heracross":["Bug","Fighting",80,125,75,40,95],
+ "Scizor":["Bug","Steel",70,130,100,55,80],"Tyranitar":["Rock","Dark",100,134,110,95,100],"Steelix":["Steel","Ground",75,85,200,55,65],
+ "Camerupt":["Fire","Ground",70,100,70,105,75],"Torkoal":["Fire","",70,85,140,85,70]
+};
+function fillSel(id,arr,val){ const s=document.getElementById(id); s.innerHTML=arr.map(o=>`<option value="${o}"${o===val?' selected':''}>${o}</option>`).join(''); }
+function initCalc(){
+  const mons=["(manual)"].concat(Object.keys(POKE).sort());
+  fillSel('atkMon',mons,'(manual)'); fillSel('defMon',mons,'(manual)');
+  fillSel('moveType',TYPES,'Water');
+  fillSel('defT1',TYPES,'Grass'); fillSel('defT2',["(none)"].concat(TYPES),'(none)');
+  const stages=["+6","+4","+3","+2","+1","0","-1","-2","-3","-4","-6"];
+  fillSel('atkStage',stages,'0'); fillSel('defStage',stages,'0');
+  calc();
+}
+function statAt(base,lvl,isHP){ return isHP?Math.floor((2*base+31)*lvl/100)+lvl+10:Math.floor((2*base+31)*lvl/100)+5; }
+function autofill(side){
+  const mon=document.getElementById(side==='atk'?'atkMon':'defMon').value;
+  if(mon==='(manual)'||!POKE[mon]){calc();return;}
+  const d=POKE[mon], lvl=+document.getElementById(side==='atk'?'atkLvl':'atkLvl').value||50;
+  if(side==='atk'){
+    const L=+document.getElementById('atkLvl').value||50;
+    const cat=document.getElementById('atkCat').value;
+    document.getElementById('atkStat').value=statAt(cat==='phys'?d[3]:d[5],L,false);
+    document.getElementById('moveType').value=d[0];
+    document.getElementById('stab').checked=true;
+  }else{
+    const L=+document.getElementById('atkLvl').value||50;
+    document.getElementById('defHP').value=statAt(d[2],L,true);
+    // default defending stat matches attacker category
+    const cat=document.getElementById('atkCat').value;
+    document.getElementById('defStat').value=statAt(cat==='phys'?d[4]:d[6],L,false);
+    document.getElementById('defT1').value=d[0];
+    document.getElementById('defT2').value=d[1]||'(none)';
+  }
+  calc();
+}
+function stageMult(v){ v=parseInt(v,10); return v>=0?(2+v)/2:2/(2-v); }
+function calc(){
+  const L=+document.getElementById('atkLvl').value||1;
+  let A=+document.getElementById('atkStat').value||1;
+  let D=+document.getElementById('defStat').value||1;
+  const P=+document.getElementById('movePow').value||0;
+  const HP=+document.getElementById('defHP').value||1;
+  const mv=document.getElementById('moveType').value;
+  const t1=document.getElementById('defT1').value;
+  const t2=document.getElementById('defT2').value==='(none)'?'':document.getElementById('defT2').value;
+  const crit=document.getElementById('crit').checked;
+  const burn=document.getElementById('burn').checked;
+  const cat=document.getElementById('atkCat').value;
+  A*=stageMult(document.getElementById('atkStage').value);
+  D*=stageMult(document.getElementById('defStage').value);
+  const e=eff(mv,t1,t2);
+  const out=document.getElementById('calcOut');
+  let base=Math.floor(Math.floor(Math.floor((2*L/5+2)*P*A/Math.max(1,D))/50));
+  if(crit)base*=2;
+  base+=2;
+  let mod=1;
+  if(document.getElementById('stab').checked)mod*=1.5;
+  mod*=e;
+  const w=document.getElementById('weather').value;
+  if((w==='sunFire'&&mv==='Fire')||(w==='rainWater'&&mv==='Water'))mod*=1.5;
+  if((w==='sunWater'&&mv==='Water')||(w==='rainFire'&&mv==='Fire'))mod*=0.5;
+  if(burn&&cat==='phys')mod*=0.5;
+  if(document.getElementById('screen').checked&&!crit)mod*=0.5;
+  mod*=(+document.getElementById('atkItem').value);
+  const min=Math.max(e===0?0:1,Math.floor(base*mod*0.85));
+  const max=e===0?0:Math.floor(base*mod*1.0);
+  const pMin=(min/HP*100), pMax=(max/HP*100);
+  let effTxt=e===0?'Immune (0×)':e>=4?`Massively super effective (${e}×)`:e>1?`Super effective (${e}×)`:e===1?'Neutral (1×)':`Resisted (${e}×)`;
+  let color=e===0?'#6b7280':e>1?'var(--good)':e<1?'var(--warn)':'var(--accent2)';
+  // KO verdict
+  let ko='',kcolor='var(--muted)';
+  if(e===0){ko='No damage — immune';kcolor='#6b7280';}
+  else if(min>=HP){ko='Guaranteed OHKO 💥';kcolor='var(--good)';}
+  else if(max>=HP){ko='Possible OHKO (roll-dependent)';kcolor='var(--warn)';}
+  else { const n=Math.ceil(HP/Math.max(1,min)); const nb=Math.ceil(HP/Math.max(1,max)); ko=(n===nb?`${n}HKO`:`${nb}–${n}HKO`)+' (best–worst case)';kcolor=n<=2?'var(--good)':'var(--txt)';}
+  const fillPct=Math.min(100,pMax);
+  out.innerHTML=`
+    <div class="calcbig" style="color:${color}">${min}–${max} dmg</div>
+    <div class="calcpct">${pMin.toFixed(1)}% – ${pMax.toFixed(1)}% of ${HP} HP</div>
+    <div class="kobar"><div class="kofill" style="width:${fillPct}%;background:${kcolor}"></div></div>
+    <div class="koverdict" style="color:${kcolor}">${ko}</div>
+    <div class="eff" style="color:${color}">${effTxt}</div>`;
+}
+initCalc();
+
+/* ---------------- HASH ROUTING ---------------- */
+if(location.hash){const id=location.hash.slice(1);const btn=[...document.querySelectorAll('nav button')].find((b,i)=>tabs[i][0]===id);if(btn)btn.click();}
+</script>
+</body>
+</html>
