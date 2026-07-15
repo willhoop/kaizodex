@@ -95,7 +95,7 @@
   .trk .loc{font-weight:700;font-size:13.5px;min-width:150px;flex:1}
   .trk .loc small{display:block;color:var(--muted);font-weight:500;font-size:11px}
   .trk img{width:40px;height:40px;object-fit:contain}
-  .trk input.sp,.trk input.nk{background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:6px 9px;border-radius:8px;font-size:12.5px;width:120px}
+  .trk input.sp,.trk select.sp,.trk input.nk{background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:6px 9px;border-radius:8px;font-size:12.5px;width:140px}
   .trk .st{display:flex;gap:4px}
   .trk .st button{border:1px solid var(--line);background:var(--panel2);color:var(--muted);font-size:11px;font-weight:700;padding:5px 9px;border-radius:8px;cursor:pointer}
   .trk .st button.on[data-s="team"]{background:var(--good);color:#04240f;border-color:transparent}
@@ -185,7 +185,10 @@
   .dexcell .kz{position:absolute;top:3px;right:4px;font-size:9px;color:var(--warn)}
   .dexcell .star{position:absolute;top:2px;left:5px;font-size:13px;color:var(--line);cursor:pointer}
   .dexcell .star.on{color:var(--warn)}
-  .dexdetail{background:var(--panel);border:1px solid var(--accent);border-radius:14px;padding:16px;margin-top:14px}
+  .dexmodal{position:fixed;inset:0;background:rgba(3,7,18,.72);z-index:60;display:flex;align-items:center;justify-content:center;padding:16px}
+  .dexdetail{background:var(--panel);border:1px solid var(--accent);border-radius:14px;padding:18px;max-width:660px;width:100%;max-height:86vh;overflow:auto;position:relative;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+  .dexclose{position:absolute;top:8px;right:12px;font-size:22px;line-height:1;color:var(--muted);cursor:pointer;background:none;border:none}
+  .dexclose:hover{color:var(--txt)}
   .dexdetail .dh{display:flex;align-items:center;gap:14px}
   .dexdetail .dh img{width:88px;height:88px;object-fit:contain}
   .typebadge{display:inline-block;font-size:10px;font-weight:700;padding:2px 9px;border-radius:999px;margin-right:5px;color:#04122b;text-transform:uppercase}
@@ -289,9 +292,36 @@
   <!-- AI -->
   <section id="ai">
     <h2 class="title">How the Enemy AI Thinks</h2>
-    <p class="sub">The #1 reason blind runs die. Internalize these to predict enemy moves and bait mistakes.</p>
+    <p class="sub">Emerald Kaizo runs the vanilla Emerald battle AI, but <b>every trainer has all the "smart" AI flags turned on</b> — plus held items (Sitrus/Lum/Choice/Sash), optimized movesets and high IV/EV spreads. So each fight plays like the hardest the Emerald engine can be. For the <b>exact</b> move a specific enemy mon will choose against your mon, use the embedded <b>Enemy Move AI</b> tool in the <b>EK Tools</b> tab. Below is how that AI operates and switches.</p>
     <div class="card" id="aiList"></div>
-    <div class="callout"><b>Golden rule:</b> load the enemy team in the damage calc and script the fight turn-by-turn before you play it. Improvising = dead mons.</div>
+    <div class="callout"><b>Golden rule:</b> load the enemy team in the damage calc and script the fight turn-by-turn before you play it. Improvising = dead mons. Want to see the AI's exact pick? Use the embedded <b>Enemy Move AI</b> tool in the <b>EK Tools</b> tab.</div>
+
+    <div class="card">
+      <h3>🔬 One enemy turn, step by step</h3>
+      <p style="font-size:13.5px;margin:0 0 8px">Every trainer Pokémon runs the same loop each turn. Emerald Kaizo enables the full "smart" AI flag set, so bosses play near-optimally. The order is:</p>
+      <ol class="clean" style="padding-left:22px">
+        <li><b>Step 0 — Switch check (happens first).</b> Before it ever picks a move, the AI decides whether to switch out (see the switch logic below). If it switches, your turn's move hits the <i>incoming</i> mon.</li>
+        <li><b>Step 1 — Score every legal move, starting at 100.</b> Each of its 4 moves gets a running score. Multiple AI "scripts" then add or subtract points.</li>
+        <li><b>Step 2 — Throw out bad moves.</b> Big penalties for: moves you're immune to (Ground vs Flying, Electric vs Ground, status vs a mon that already has it), moves that would fail, redundant stat drops, healing at full HP, etc. These almost never get clicked.</li>
+        <li><b>Step 3 — "Can I KO you this turn?"</b> If a move is lethal, it gets a large bonus — and among lethal moves it prefers the one it moves <i>first</i> with. <b>This is the #1 rule: never sit in front of a mon that has a clean KO on you.</b></li>
+        <li><b>Step 4 — Otherwise, maximize damage.</b> With no KO available, it leans toward its highest-damage move vs your <i>current</i> mon (reading your types), so it will click coverage into your expected switch-in.</li>
+        <li><b>Step 5 — Value setup / status / weather when safe.</b> If it doesn't fear you, it scores up Spikes, Dragon Dance, Calm Mind, weather, screens, Thunder Wave, Hypnosis, Toxic, etc. — usually on turn one or after it forces you out.</li>
+        <li><b>Step 6 — Play the highest score.</b> Ties are broken randomly, which is the only real coin-flip you'll see.</li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <h3>🔀 Exactly when the AI switches out</h3>
+      <p style="font-size:13.5px;margin:0 0 8px">At Step 0 the AI runs these switch checks in order. It stays in by default — it only switches when one triggers (several are randomized ~50%, so it isn't 100% predictable):</p>
+      <ol class="clean" style="padding-left:22px">
+        <li><b>Can't switch?</b> If it's trapped (your Mean Look / Arena Trap / <b>Shadow Tag Ditto</b>) or is the last mon, it stays and fights.</li>
+        <li><b>Is it walled?</b> If it literally can't damage you (immunity / it has no move that hits), it looks to switch to something that can.</li>
+        <li><b>Ability absorb.</b> If a benched mon has an ability that <i>eats</i> the move it expects from you — <b>Volt Absorb, Water Absorb, Flash Fire, Lightningrod</b> — it will switch that mon in on your attack. Don't blindly spam one move type into a team that has the absorber.</li>
+        <li><b>Bad matchup + better answer.</b> If its active mon has only not-very-effective moves against you <i>and</i> a party member has a super-effective move (or resists you), it switches to that answer — but only on a random roll, so sometimes it stays.</li>
+        <li><b>Perish Song / forced timers</b> count down and can force a swap.</li>
+      </ol>
+      <div class="callout" style="margin:10px 0 0"><b>How to use this:</b> the safest switches for <i>you</i> are into a locked/recharge/asleep enemy, or when you present a mon that baits a move your real answer walls. Because the AI predicts your switch-in, lead with a "lure," then bring the counter in on the move you forced. And never switch a chipped mon into <b>Pursuit</b> (Sidney/Phoebe/Houndoom) — it traps and doubles up.</div>
+    </div>
 
     <div class="card">
       <h3>🧠 How the AI actually chooses a move</h3>
@@ -725,15 +755,16 @@ function renderTracker(){
     const sp=r.species||'';
     const img=sp?`<img src="${sprite(sp)}" onerror="this.style.opacity=.15">`:`<img src="" style="opacity:.12" alt="">`;
     const btn=(s,lbl)=>`<button data-s="${s}" class="${r.status===s?'on':''}" onclick="setStatus('${loc.replace(/'/g,"\\'")}','${s}')">${lbl}</button>`;
-    const encL=encSpeciesFor(loc);
-    const encHtml=encL.length?`<button class="encbtn" onclick="this.parentNode.querySelector('.encpanel').classList.toggle('open')">catch options ▾</button><div class="encpanel">${encL.map(n=>`<span class="echip" onclick="pickSpecies('${loc.replace(/'/g,"\\'")}','${n.replace(/'/g,"\\'")}')"><img src="${sprite(n)}" onerror="this.style.display='none'">${n}</span>`).join('')}</div>`:'';
+    const opts=routeMons(loc);
+    const spField=opts.length
+      ? `<select class="sp" onchange="pickSpecies('${loc.replace(/'/g,"\\'")}',this.value)"><option value="">— pick encounter —</option>${opts.map(n=>`<option value="${n}"${sp===n?' selected':''}>${n}</option>`).join('')}${(sp&&!opts.includes(sp))?`<option value="${sp}" selected>${sp}</option>`:''}</select>`
+      : `<input class="sp" placeholder="Species" value="${sp.replace(/"/g,'&quot;')}" onchange="setField('${loc.replace(/'/g,"\\'")}','species',this.value)">`;
     return `<div class="trk ${r.status==='dead'?'dead':''}">
       ${img}
-      <div class="loc">${loc}<small>${r.status?({team:'On team',box:'Boxed',dead:'Fainted 💀',missed:'Missed'}[r.status]):'—'}</small></div>
-      <input class="sp" placeholder="Species" value="${sp.replace(/"/g,'&quot;')}" onchange="setField('${loc.replace(/'/g,"\\'")}','species',this.value)">
+      <div class="loc">${loc}<small>${r.status?({team:'On team',box:'Boxed',dead:'Fainted 💀',missed:'Missed'}[r.status]):(opts.length?opts.length+' encounters available':'—')}</small></div>
+      ${spField}
       <input class="nk" placeholder="Nickname" value="${(r.nick||'').replace(/"/g,'&quot;')}" onchange="setField('${loc.replace(/'/g,"\\'")}','nick',this.value)">
       <div class="st">${btn('team','Team')}${btn('box','Box')}${btn('dead','Dead')}${btn('missed','Miss')}</div>
-      ${encHtml}
     </div>`;
   }).join('')||'<div class="card" style="text-align:center;color:var(--muted)">Nothing matches.</div>';
 }
@@ -748,6 +779,12 @@ function encSpeciesFor(loc){
   return out;
 }
 function pickSpecies(loc,name){ RUN[loc]=RUN[loc]||{}; RUN[loc].species=name; saveRun(); renderTracker(); }
+function routeMons(loc){
+  const base=loc.replace(/\s*\(.*\)/,'').trim(); const out=[];
+  ENC.forEach(L=>{ if(L[0].split(' — ')[0].trim()!==base)return;
+    L[1].forEach(g=>g[1].split(',').forEach(s=>{const m=s.trim().match(/^(.+?)\s+\d+$/);const n=m?m[1]:s.trim();if(n&&!out.includes(n))out.push(n);})); });
+  return out;
+}
 function exportRun(){
   let out="EMERALD KAIZO — MY RUN\n\n";
   LOCATIONS.forEach(loc=>{const r=RUN[loc]||{};if(r.species||r.status){
@@ -1180,10 +1217,11 @@ function renderDex(){
   }).join('')||'<div class="mtempty">No matches.</div>';
 }
 function showDex(name){
-  const d=document.getElementById('dexDetail'); d.innerHTML='<div class="dexdetail">Loading…</div>';
-  if(DEXCACHE[name]){renderDexDetail(name);d.scrollIntoView({behavior:'smooth',block:'nearest'});return;}
-  fetch('https://pokeapi.co/api/v2/pokemon/'+name).then(r=>r.json()).then(j=>{DEXCACHE[name]=j;renderDexDetail(name);d.scrollIntoView({behavior:'smooth',block:'nearest'});}).catch(()=>{d.innerHTML='<div class="dexdetail">Could not load.</div>';});
+  const d=document.getElementById('dexDetail'); d.innerHTML='<div class="dexmodal"><div class="dexdetail">Loading…</div></div>';
+  if(DEXCACHE[name]){renderDexDetail(name);return;}
+  fetch('https://pokeapi.co/api/v2/pokemon/'+name).then(r=>r.json()).then(j=>{DEXCACHE[name]=j;renderDexDetail(name);}).catch(()=>{d.innerHTML='<div class="dexmodal" onclick="closeDex()"><div class="dexdetail">Could not load. <button class="dexclose" onclick="closeDex()">✕</button></div></div>';});
 }
+function closeDex(){const d=document.getElementById('dexDetail');if(d)d.innerHTML='';}
 function renderDexDetail(name){
   const j=DEXCACHE[name]; if(!j)return;
   const types=j.types.map(t=>t.type.name);
@@ -1195,7 +1233,7 @@ function renderDexDetail(name){
     return `<div class="statbar${buff?' buff':''}"><span class="sl">${lbl}</span><span class="sv">${v}</span><div class="st"><div class="sf" style="width:${Math.min(100,v/200*100)}%;background:${col}"></div></div></div>`;};
   const ab=ABMAP[name], abList=j.abilities.map(a=>cap1(a.ability.name)).join(', ');
   const lv=j.moves.map(m=>{const dd=m.version_group_details.find(v=>v.move_learn_method.name==='level-up'&&['emerald','ruby-sapphire','firered-leafgreen'].includes(v.version_group.name));return dd?{n:cap1(m.move.name),l:dd.level_learned_at}:null;}).filter(Boolean).sort((a,b)=>a.l-b.l);
-  document.getElementById('dexDetail').innerHTML=`<div class="dexdetail">
+  document.getElementById('dexDetail').innerHTML=`<div class="dexmodal" onclick="if(event.target===this)closeDex()"><div class="dexdetail"><button class="dexclose" onclick="closeDex()">✕</button>
     <div class="dh"><img src="${sprite(name)}" onerror="this.style.opacity=.2">
       <div><div style="font-size:20px;font-weight:800">${cap1(name)} <span style="color:var(--muted);font-size:13px">#${j.id}</span></div>
       <div style="margin:6px 0">${types.map(t=>`<span class="typebadge" style="background:${TYPECOLOR[t]||'#777'}">${t}</span>`).join('')}</div>
@@ -1205,7 +1243,7 @@ function renderDexDetail(name){
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px">
       <div>${row('HP','hp')}${row('Atk','attack')}${row('Def','defense')}${row('SpA','special-attack')}${row('SpD','special-defense')}${row('Spe','speed')}</div>
       <div style="max-height:210px;overflow:auto"><div class="meth">Level-up moves (base game)</div>${lv.map(m=>`<div style="font-size:12px;padding:2px 0"><span style="color:var(--accent2)">L${m.l}</span> ${m.n}</div>`).join('')||'<span class="mtempty">—</span>'}</div></div>
-    <p class="sub" style="margin:10px 0 0">Stats show Kaizo values where changed (green). Kaizo also tweaks some movepools/TMs — see the Learnsets doc in Resources.</p></div>`;
+    <p class="sub" style="margin:10px 0 0">Stats show Kaizo values where changed (green). Kaizo also tweaks some movepools/TMs — see the Learnsets doc in Resources.</p></div></div>`;
 }
 /* ---- My Team ---- */
 function toggleTeam(name){
