@@ -11,6 +11,16 @@ rewritten; what changed and why is stated.
 
 ---
 
+## [1.1.0] — 2026-07-22
+
+### Added
+- **Governance and delivery files** to meet the portfolio's public-company documentation bar:
+  `LICENSE` (MIT), `SECURITY.md`, `CONTRIBUTING.md`, `.gitignore`, a GitHub Actions CI workflow, and
+  `tests/test-data.js` (12 tests) validating `trainers.json` and `changes.json` and that the shipped
+  HTML still references both.
+
+---
+
 ## [1.0.0] — 2026-07-22
 
 ### Added
